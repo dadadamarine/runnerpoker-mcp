@@ -189,6 +189,33 @@ uv run runnerpoker-auth < /absolute/path/to/private-session.json
 토큰을 교체할 때 서버를 재시작할 필요가 없습니다.
 만료된 세션은 브라우저에서 다시 로그인한 후 갱신하세요. 자동 로그인·refresh는 구현하지 않았습니다.
 
+### 에이전트의 로컬 Chrome 인증 추출
+
+사용자가 본인 브라우저에서 인증 정보를 추출해 MCP에 저장하도록 요청한 경우,
+에이전트가 로컬 저장소를 읽어 위 인증 명령의 표준 입력으로 전달할 수 있습니다.
+토큰을 사용자가 채팅에 붙여넣도록 요청하거나 개발자 콘솔에 출력하지 마세요.
+
+macOS Chrome의 기본 프로필 저장소는
+`~/Library/Application Support/Google/Chrome/Default/Local Storage/leveldb`입니다.
+다른 프로필을 사용하는 경우 Chrome의 `Local State`에서 프로필을 확인하세요.
+
+1. 저장소를 읽기 전용으로 열고 `https://craft.runnerpoker.com` origin의
+   `accessToken`과 `auth-storage` 값만 선택합니다.
+2. LevelDB 레코드의 sequence와 삭제 기록을 반영해 현재 값을 판별합니다.
+   오래된 토큰이 섞일 수 있으므로 파일 전체의 단순 문자열 검색 결과를 사용하지 마세요.
+   로그만으로 현재 값을 확정할 수 없으면 SST 테이블까지 처리하는 리더가 필요합니다.
+3. `auth-storage` JSON의 `state.user.userSeq`를 읽고, 토큰과 함께 메모리에서
+   JSON을 구성해 `runnerpoker-auth`의 표준 입력으로 전달합니다.
+   토큰은 콘솔·채팅·명령행 인자·로그·저장소·중간 파일에 남기지 않습니다.
+4. `auth_status`에서 `configured: true`를 확인한 뒤,
+   `get_timeline(page=1, page_size=1)` 같은 소량의 읽기 요청이 성공하는지 확인합니다.
+   `auth_status`만으로 원격 인증 성공을 판단하지 마세요.
+
+이 경로는 Chrome 저장 형식에 의존하는 수동 운영 절차이며, 프로젝트에 자동 추출
+명령은 아직 없습니다. 브라우저 원본 저장소를 수정하거나 잠금 파일을 제거하지 마세요.
+저장소에서 값을 찾지 못하거나 원격 인증이 만료되면 사용자에게 브라우저 재로그인을
+요청하고 다시 추출합니다. MCP 서버 재시작은 필요하지 않습니다.
+
 ## MCP 클라이언트 설정
 
 클라이언트의 stdio 서버 설정에 다음 command와 args를 사용하세요.
