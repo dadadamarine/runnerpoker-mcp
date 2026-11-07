@@ -8,3 +8,13 @@ dist/
 .env.*
 credentials*.json
 *token*.json
+*session*.json
+*cookie*.json
+.credentials-*
+.secrets/
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
