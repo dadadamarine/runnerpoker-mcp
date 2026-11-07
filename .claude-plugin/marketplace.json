@@ -1,0 +1,12 @@
+{
+  "name": "runnerpoker-community",
+  "owner": {"name": "dadadamarine", "url": "https://github.com/dadadamarine"},
+  "description": "RunnerPoker Craft 기록 조회를 위한 비공식 커뮤니티 플러그인입니다.",
+  "plugins": [
+    {
+      "name": "runnerpoker",
+      "source": "./",
+      "description": "내 러너포커 기록·HUD·파켓페어 손익 조회"
+    }
+  ]
+}

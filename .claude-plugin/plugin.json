@@ -1,0 +1,9 @@
+{
+  "name": "runnerpoker",
+  "version": "0.3.1",
+  "description": "러너포커 Craft의 내 플레이 기록과 통계를 조회하는 비공식 읽기 전용 MCP입니다.",
+  "author": {"name": "dadadamarine", "url": "https://github.com/dadadamarine"},
+  "homepage": "https://github.com/dadadamarine/runnerpoker-mcp",
+  "repository": "https://github.com/dadadamarine/runnerpoker-mcp",
+  "keywords": ["runnerpoker", "poker", "hand-history", "mcp"]
+}

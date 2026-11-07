@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "runnerpoker",
+  "version": "0.3.1",
+  "description": "러너포커 Craft의 내 플레이 기록과 통계를 조회하는 비공식 읽기 전용 MCP입니다.",
+  "author": {"name": "dadadamarine", "url": "https://github.com/dadadamarine"},
+  "homepage": "https://github.com/dadadamarine/runnerpoker-mcp",
+  "repository": "https://github.com/dadadamarine/runnerpoker-mcp",
+  "keywords": ["runnerpoker", "poker", "hand-history", "mcp"],
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "RunnerPoker",
+        "shortDescription": "내 러너포커 기록·HUD·파켓페어 손익 조회",
+        "longDescription": "RunnerPoker Craft에서 본인 계정의 타임라인, 세션, 핸드와 통계를 읽습니다. 로컬 실행 및 별도 계정 인증이 필요합니다. 베팅과 계정 변경은 지원하지 않으며 솔버를 실행하지 않습니다.",
+        "developerName": "dadadamarine",
+        "category": "Productivity",
+        "capabilities": ["Read"],
+        "websiteURL": "https://github.com/dadadamarine/runnerpoker-mcp",
+        "defaultPrompt": ["러너포커 연결 상태를 확인하고 최근 세션을 보여줘."]
+      }
+    }
+  }
+}

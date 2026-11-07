@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "runnerpoker": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--python", "3.11",
+        "--from", "git+https://github.com/dadadamarine/runnerpoker-mcp.git@eb46c5b34efe7e6368f129c1a9d68cf5bda2e713",
+        "runnerpoker-mcp"
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "runnerpoker": {
+      "command": "uvx",
+      "args": [
+        "--python", "3.11",
+        "--from", "git+https://github.com/dadadamarine/runnerpoker-mcp.git@eb46c5b34efe7e6368f129c1a9d68cf5bda2e713",
+        "runnerpoker-mcp"
+      ]
+    }
+  }
+}
