@@ -1,0 +1,111 @@
+{
+  "_meta": {
+    "synthetic": true,
+    "description": "Hand-authored contract fixtures. No captured account data. IDs, people and results are fictional. Shapes follow public Craft JS; live authenticated compatibility is not established."
+  },
+  "timeline": {
+    "performance": {"profit": 12, "handCount": 5},
+    "days": {"items": [{"date": "2026-11-07", "profit": 12}], "totalPages": 1}
+  },
+  "timeline_day": {"items": [{"type": "holdem", "participantId": 123456}]},
+  "sessions": {"items": [{"sessionId": 123456, "startedAt": "2026-11-07T01:00:00Z", "profit": 12}], "totalPages": 1},
+  "performance": {"stackTrend": [{"handNo": 1, "stack": 500, "stackBb": 250}, {"handNo": 5, "stack": 512, "stackBb": 256}]},
+  "summary": {"handCount": 5, "profit": 12, "bb100": 150, "evBb100": null},
+  "hud": {"handCount": 5, "stats": {"vpip": 0.6, "pfr": 0.4, "threeBet": 0.2, "flopCb": 0.5, "riverWtsd": 0.25, "riverWsd": 0.5}},
+  "positions": {
+    "items": [
+      {"position": "BB", "hands": 1, "bb100": -1600, "evBb100": null},
+      {"position": "BTN", "hands": 1, "bb100": 2200, "evBb100": null},
+      {"position": "CO", "hands": 1, "bb100": -2500, "evBb100": null},
+      {"position": "SB", "hands": 1, "bb100": 2500, "evBb100": null}
+    ]
+  },
+  "hand_pages": [
+    {"items": [
+      {"handId": 101, "gameType": "Cash", "endAt": "2026-11-07T01:05:00Z", "hero": {"holeCards": [1, 14], "netDelta": -32, "position": "BB"}, "table": {"blinds": {"bigBlind": 2}}},
+      {"handId": 102, "gameType": "Cash", "endAt": "2026-11-07T01:04:00Z", "hero": {"holeCards": [1, 27], "netDelta": 44, "position": "BTN"}, "table": {"blinds": {"bigBlind": 2}}},
+      {"handId": 103, "gameType": "Cash", "endAt": "2026-11-07T01:03:00Z", "hero": {"holeCards": [13, 26], "netDelta": -50, "position": "CO"}, "table": {"blinds": {"bigBlind": 2}}}
+    ], "hasNext": true, "nextCursor": "fixture-page-2"},
+    {"items": [
+      {"handId": 103, "gameType": "Cash", "endAt": "2026-11-07T01:03:00Z", "hero": {"holeCards": [13, 26], "netDelta": -50, "position": "CO"}, "table": {"blinds": {"bigBlind": 2}}},
+      {"handId": 104, "gameType": "Cash", "endAt": "2026-11-07T01:02:00Z", "hero": {"holeCards": [1, 13], "netDelta": 50, "position": "SB"}, "table": {"blinds": {"bigBlind": 2}}},
+      {"handId": 105, "gameType": "Cash", "endAt": "2026-11-07T01:01:00Z", "hero": {"holeCards": [], "netDelta": null, "position": null}, "table": {"blinds": {"bigBlind": 2}}}
+    ], "hasNext": false, "nextCursor": null}
+  ],
+  "hand_details": {
+    "101": {
+      "handId": 101, "gameType": "Cash",
+      "players": [{"userId": 42, "nickname": "Fixture Hero", "position": "BB", "stack": 500, "holeCards": [1, 14]}, {"userId": 7, "nickname": "Fixture Villain", "position": "SB", "stack": 500, "holeCards": []}],
+      "table": {"blinds": {"smallBlind": 1, "bigBlind": 2}, "board": [3, 17, 31, 45, 9], "totalPot": 100},
+      "streets": [
+        {"stage": "Preflop", "pot": 3, "actions": [
+          {"seq": 1, "userId": 7, "action": "SmallBlind", "betMoney": 1, "totalBet": 1},
+          {"seq": 2, "userId": 42, "action": "BigBlind", "betMoney": 2, "totalBet": 2},
+          {"seq": 3, "userId": 7, "action": "Raise", "betMoney": 5, "totalBet": 6},
+          {"seq": 4, "userId": 42, "action": "Raise", "betMoney": 18, "totalBet": 20},
+          {"seq": 5, "userId": 7, "action": "Call", "betMoney": 14, "totalBet": 20}
+        ]},
+        {"stage": "Flop", "pot": 40, "actions": [
+          {"seq": 1, "userId": 42, "action": "Bet", "betMoney": 12, "totalBet": 12},
+          {"seq": 2, "userId": 7, "action": "Call", "betMoney": 12, "totalBet": 12}
+        ]},
+        {"stage": "Turn", "pot": 64, "actions": [
+          {"seq": 1, "userId": 42, "action": "Check", "betMoney": 0, "totalBet": 0},
+          {"seq": 2, "userId": 7, "action": "Check", "betMoney": 0, "totalBet": 0}
+        ]},
+        {"stage": "River", "pot": 64, "actions": [
+          {"seq": 1, "userId": 42, "action": "Check", "betMoney": 0, "totalBet": 0},
+          {"seq": 2, "userId": 7, "action": "Bet", "betMoney": 36, "totalBet": 36},
+          {"seq": 3, "userId": 42, "action": "Fold", "betMoney": 0, "totalBet": 0}
+        ]}
+      ],
+      "pots": {"main": {"winners": [{"userId": 7, "potMoney": 100}]}, "side": []}
+    },
+    "102": {
+      "handId": 102, "gameType": "Cash", "players": [{"userId": 42, "position": "BTN", "stack": 500, "holeCards": [1, 27]}, {"userId": 7, "position": "SB", "stack": 500}, {"userId": 8, "position": "BB", "stack": 500}],
+      "table": {"blinds": {"bigBlind": 2}, "board": [4, 18, 32, 46, 10], "totalPot": 86},
+      "streets": [
+        {"stage": "Preflop", "actions": [
+          {"seq": 1, "userId": 7, "action": "SmallBlind", "totalBet": 1},
+          {"seq": 2, "userId": 8, "action": "BigBlind", "totalBet": 2},
+          {"seq": 3, "userId": 42, "action": "Raise", "totalBet": 6},
+          {"seq": 4, "userId": 7, "action": "Call", "totalBet": 6},
+          {"seq": 5, "userId": 8, "action": "Fold"}
+        ]},
+        {"stage": "Flop", "actions": [{"seq": 1, "userId": 7, "action": "Check"}, {"seq": 2, "userId": 42, "action": "Bet", "totalBet": 12}, {"seq": 3, "userId": 7, "action": "Call", "totalBet": 12}]},
+        {"stage": "Turn", "actions": [{"seq": 1, "userId": 7, "action": "Check"}, {"seq": 2, "userId": 42, "action": "Check"}]},
+        {"stage": "River", "actions": [{"seq": 1, "userId": 7, "action": "Check"}, {"seq": 2, "userId": 42, "action": "Bet", "totalBet": 24}, {"seq": 3, "userId": 7, "action": "Call", "totalBet": 24}]}
+      ], "pots": {"main": {"winners": [{"userId": 42, "potMoney": 86}]}, "side": []}
+    },
+    "103": {
+      "handId": 103, "gameType": "Cash", "players": [{"userId": 42, "position": "CO", "stack": 500}, {"userId": 7, "position": "SB", "stack": 500}, {"userId": 8, "position": "BB", "stack": 500}],
+      "table": {"blinds": {"bigBlind": 2}, "board": [4, 18, 32], "totalPot": 152},
+      "streets": [
+        {"stage": "Preflop", "actions": [
+          {"seq": 1, "userId": 7, "action": "SmallBlind", "totalBet": 1},
+          {"seq": 2, "userId": 8, "action": "BigBlind", "totalBet": 2},
+          {"seq": 3, "userId": 42, "action": "Raise", "totalBet": 6},
+          {"seq": 4, "userId": 7, "action": "Raise", "totalBet": 20},
+          {"seq": 5, "userId": 8, "action": "Fold"},
+          {"seq": 6, "userId": 42, "action": "Raise", "totalBet": 50},
+          {"seq": 7, "userId": 7, "action": "Call", "totalBet": 50}
+        ]},
+        {"stage": "Flop", "actions": [{"seq": 1, "userId": 7, "action": "Bet", "totalBet": 50}, {"seq": 2, "userId": 42, "action": "Fold"}]}
+      ], "pots": {"main": {"winners": [{"userId": 7, "potMoney": 152}]}, "side": []}
+    },
+    "104": {
+      "handId": 104, "gameType": "Cash", "players": [{"userId": 42, "position": "SB", "stack": 50}, {"userId": 7, "position": "BB", "stack": 50}],
+      "table": {"blinds": {"bigBlind": 2}, "board": [3, 17, 31, 45, 9], "totalPot": 100},
+      "streets": [
+        {"stage": "Preflop", "actions": [
+          {"seq": 1, "userId": 42, "action": "SmallBlind", "totalBet": 1},
+          {"seq": 2, "userId": 7, "action": "BigBlind", "totalBet": 2},
+          {"seq": 3, "userId": 42, "action": "AllIn", "totalBet": 50},
+          {"seq": 4, "userId": 7, "action": "Call", "totalBet": 50}
+        ]},
+        {"stage": "Flop", "actions": []}, {"stage": "Turn", "actions": []}, {"stage": "River", "actions": []}
+      ], "pots": {"main": {"winners": [{"userId": 42, "potMoney": 100}]}, "side": []}
+    },
+    "105": {"handId": 105}
+  }
+}

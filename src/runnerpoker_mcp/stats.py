@@ -179,6 +179,13 @@ def aggregate(sample: dict[str, Any], group_by: GroupBy, min_samples: int) -> di
             key = hand["spot"]["pot_type"]
         else:
             key = hand["spot"]["hero_reached_river"]
+        if (
+            isinstance(key, str)
+            and key.strip().lower() in {"", "unknown", "미확인", "-", "—"}
+            or group_by == "river_participation"
+            and not isinstance(key, bool)
+        ):
+            key = None
         groups[str(key) if key is not None else "unknown"].append(hand)
     rows = []
     for label, records in groups.items():
@@ -207,6 +214,23 @@ def aggregate(sample: dict[str, Any], group_by: GroupBy, min_samples: int) -> di
         key=lambda row: (row["net_bb"] is None, row["net_bb"] if row["net_bb"] is not None else 0)
     )
     coverage = {key: value for key, value in sample.items() if key != "hands"}
+    group_unknown = len(groups.get("unknown", []))
+    missing_profit = sum(hand["net_bb"] is None for hand in sample["hands"])
+    filter_unknown = sample.get("filter_unknown_count", sample.get("unclassified_count", 0))
+    truncated = bool(sample.get("results_truncated", False))
+    classification_complete = filter_unknown == 0 and group_unknown == 0 and not truncated
+    profit_complete = missing_profit == 0 and filter_unknown == 0 and not truncated
+    coverage.update(
+        filter_unknown_count=filter_unknown,
+        group_unknown_count=group_unknown,
+        unclassified_count=filter_unknown + group_unknown,
+        missing_bb_results_count=missing_profit,
+        classification_complete=classification_complete,
+        profit_complete=profit_complete,
+        analysis_complete=bool(sample.get("history_exhausted"))
+        and classification_complete
+        and profit_complete,
+    )
     return {
         "group_by": group_by,
         "groups": rows,
@@ -321,6 +345,7 @@ async def hand_range_stats(
         "classification_complete": exhausted and not unknown,
         "stop_reason": stop_reason,
         "unclassified_count": unknown,
+        "filter_unknown_count": 0,
         "details_fetched": 0,
     }
     result = aggregate(sample, "hand_class", min_samples)

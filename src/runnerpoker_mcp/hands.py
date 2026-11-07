@@ -86,7 +86,11 @@ async def list_hands(
 
 
 async def get_hand(hand_id: int) -> dict[str, Any]:
-    return await client.get_json(f"/hand-histories/v2/{positive_id(hand_id)}")
+    positive_id(hand_id)
+    record = await client.get_json(f"/hand-histories/v2/{hand_id}")
+    if record.get("handId") != hand_id:
+        raise RunnerPokerError("Hand detail ID does not match the requested hand.")
+    return record
 
 
 def classify(detail: dict[str, Any], hero_id: int) -> dict[str, Any]:
@@ -95,6 +99,7 @@ def classify(detail: dict[str, Any], hero_id: int) -> dict[str, Any]:
         "pot_type": None,
         "hero_reached_river": None,
         "hero_has_river_action": None,
+        "reasons": {"pot_type": "insufficient_preflop_trace", "river": "insufficient_trace"},
     }
     streets = detail.get("streets")
     table = detail.get("table", {})
@@ -106,13 +111,33 @@ def classify(detail: dict[str, Any], hero_id: int) -> dict[str, Any]:
             return result
         if any(not isinstance(a, dict) for a in street["actions"]):
             return result
-        if street.get("stage") in actions:
+        if any(
+            not isinstance(a.get("action"), str)
+            or isinstance(a.get("userId"), bool)
+            or not isinstance(a.get("userId"), (int, str))
+            or a.get("userId") == ""
+            for a in street["actions"]
+        ):
+            result["reasons"]["river"] = "invalid_action_record"
             return result
-        actions[street.get("stage")] = street["actions"]
+        stage = street.get("stage")
+        if not isinstance(stage, str) or stage not in {"Preflop", "Flop", "Turn", "River"}:
+            return result
+        if stage in actions:
+            return result
+        seqs = [a.get("seq") for a in street["actions"]]
+        if any(isinstance(s, bool) or not isinstance(s, int) or s < 0 for s in seqs) or len(
+            set(seqs)
+        ) != len(seqs):
+            result["reasons"]["river"] = "invalid_action_sequence"
+            return result
+        actions[stage] = sorted(street["actions"], key=lambda action: action["seq"])
     preflop = actions.get("Preflop", [])
     bb = big_blind(table)
     if preflop and bb is not None and bb > 0:
-        highest, increment, raises, known = bb, bb, 0, True
+        highest, increment, raises = bb, bb, 0
+        # A trace starting after the blind posts may omit earlier raises.
+        known = any(a.get("action") == "BigBlind" for a in preflop)
         seqs = [a.get("seq") for a in preflop]
         if any(number(s) is None for s in seqs) or len(set(seqs)) != len(seqs):
             known = False
@@ -142,28 +167,56 @@ def classify(detail: dict[str, Any], hero_id: int) -> dict[str, Any]:
                 if raises == 1
                 else "unraised"
             )
+            result["reasons"]["pot_type"] = "counted_full_preflop_raises"
+            result["preflop_full_raise_count"] = raises
+        else:
+            result["reasons"]["pot_type"] = "incomplete_or_unsupported_preflop_trace"
     players = detail.get("players", [])
     board = table.get("board")
     if (
         not isinstance(players, list)
         or not any(isinstance(p, dict) and str(p.get("userId")) == str(hero_id) for p in players)
         or not isinstance(board, list)
+        or len(board) not in {0, 3, 4, 5}
+        or any(isinstance(c, bool) or not isinstance(c, int) or not 1 <= c <= 52 for c in board)
+        or len(set(board)) != len(board)
     ):
+        result["reasons"]["river"] = "missing_hero_or_invalid_board"
         return result
-    river = actions.get("River", [])
-    hero_river = [a for a in river if str(a.get("userId")) == str(hero_id)]
-    result["hero_has_river_action"] = bool(hero_river) if river else None
-    folded_before = any(
-        str(a.get("userId")) == str(hero_id) and a.get("action") == "Fold"
-        for stage in ["Preflop", "Flop", "Turn"]
-        for a in actions.get(stage, [])
-    )
-    if folded_before or len(board) < 5:
-        result["hero_reached_river"] = False
+    hero_actions = [
+        (stage, action)
+        for stage in ["Preflop", "Flop", "Turn", "River"]
+        for action in actions.get(stage, [])
+        if str(action.get("userId")) == str(hero_id)
+    ]
+    decisions = {"Fold", "Check", "Call", "Bet", "Raise", "AllIn", "Allin"}
+    hero_river = [
+        a for stage, a in hero_actions if stage == "River" and a.get("action") in decisions
+    ]
+    terminal_seen = False
+    for _, action in hero_actions:
+        if terminal_seen:
+            result["reasons"]["river"] = "contradictory_actions_after_fold_or_allin"
+            return result
+        terminal_seen = action.get("action") in {"Fold", "AllIn", "Allin"}
+    earlier = [(stage, a) for stage, a in hero_actions if stage != "River"]
+    folded = any(a.get("action") == "Fold" for _, a in earlier)
+    allin = any(a.get("action") in {"AllIn", "Allin"} for _, a in earlier)
+    if hero_river and len(board) < 5:
+        result["reasons"]["river"] = "river_action_without_river_board"
+    elif folded or len(board) < 5:
+        result.update(hero_reached_river=False, hero_has_river_action=False)
+        result["reasons"]["river"] = (
+            "hero_folded_before_river" if folded else "board_ended_before_river"
+        )
     elif hero_river:
-        result["hero_reached_river"] = True
-    elif all(stage in actions and actions[stage] for stage in ["Preflop", "Flop", "Turn"]):
-        result["hero_reached_river"] = True  # Includes earlier all-ins and runouts.
+        result.update(hero_reached_river=True, hero_has_river_action=True)
+        result["reasons"]["river"] = "explicit_hero_river_action"
+    elif allin:
+        result.update(hero_reached_river=True, hero_has_river_action=False)
+        result["reasons"]["river"] = "explicit_hero_allin_with_river_runout"
+    else:
+        result["reasons"]["river"] = "no_positive_hero_river_evidence"
     return result
 
 
@@ -309,6 +362,7 @@ async def search_hands(
         "classification_complete": exhausted and not unknown,
         "stop_reason": stop_reason,
         "unclassified_count": len(unknown),
+        "filter_unknown_count": len(unknown),
         "unclassified_sample": unknown[:20],
         "results_truncated": len(matches) > limit,
         "scope_note": "Ranked within scanned/reviewed sample only. Recent order is upstream order; "

@@ -81,6 +81,37 @@ RunnerPoker Craft 타임라인을 조회하는 **비공식·읽기 전용 MCP �
 금전 손실은 전략적 실수나 EV 손실의 증거가 아니며, 이 서버는 솔버를 실행하지 않습니다.
 토너먼트에 캐시 BB 수익 지표를 적용하지 않습니다.
 
+### 로직으로 판정하는 조건
+
+분류와 계산은 Python 코드가 수행하며 LLM 호출을 사용하지 않습니다.
+
+| 조건 | 판정 근거 |
+|---|---|
+| 파켓페어·수티드·오프수트 | 1–52 카드 ID의 랭크·수트 |
+| 3벳 팟 | BB 포스팅이 있는 프리플랍 기록의 유효 레이즈 2회. 4벳 이상 제외 |
+| 리버 참여 | 유효한 5장 보드 + Hero의 명시적 리버 액션 또는 이전 스트리트의 명시적 AllIn |
+| 리버 미참여 | 리버 전 Hero Fold 또는 리버 전에 끝난 유효한 최종 보드 |
+| 손익·BB/100 | 원본 netDelta와 해당 핸드의 bigBlind로 계산, 누락 값은 제외·표시 |
+
+보드 5장과 타인의 액션만으로 Hero가 리버에 참여했다고 판정하지 않습니다.
+Hero의 턴 Check도 이후 폴드 여부를 알 수 없으면 리버 참여 증거가 되지 않습니다.
+폴드·올인 이후 Hero 추가 액션처럼 서로 모순되는 기록, 잘못된 카드·중복 액션 순번은
+미확인으로 남깁니다. `spot.reasons`에 판정/미판정 사유 코드를 반환합니다.
+기록의 완전성을 API가 보장하는지 아직 실계정으로 확인하지 않았으므로 분류 결과는
+관측한 데이터에 대한 판정입니다. 임의로 누락 액션을 복원하지 않습니다.
+
+집계의 `coverage`는 다음 상태를 독립 표시합니다.
+
+- `history_exhausted`: 서버의 마지막 페이지까지 조회했는지
+- `classification_complete`: 검색 필터와 반환 표본의 집계 축에 미확인이 없는지
+- `profit_complete`: 반환 표본에 BB 손익 누락이 없는지 (필터 미확인·결과 잘림도 보수적으로 반영)
+- `analysis_complete`: 전체 이력 조회·분류·손익 데이터가 모두 완료됐는지
+- `filter_unknown_count`, `group_unknown_count`, `missing_bb_results_count`: 각 미확인·누락 건수
+
+일부 페이지의 핸드를 모두 분류했어도 `history_exhausted=false`면 전체 분석 완료가 아닙니다.
+LLM은 미확인 값을 재추측하지 않고, 전략 리뷰에서도 해당 액션 당시 알 수 있었던 정보만
+사용해야 합니다. 이후 보드·쇼다운 결과는 의사결정 평가와 별도로 다룹니다.
+
 ### 홀덤 요약·포지션·핸드 레인지 분석
 
 - “이번 달 홀덤 요약에서 VPIP, PFR, 3Bet 보여줘.”
@@ -206,11 +237,32 @@ uv run runnerpoker-auth < /absolute/path/to/private-session.json
 ```bash
 uv sync --frozen
 uv run ruff check .
-uv run pytest -q
+uv run coverage run -m pytest -q
+uv run coverage report
 ```
 
 HTTP 모킹으로 헤더·날짜·페이지·오류 처리를 검증하며, 실제 stdio 프로세스를 띄워
 MCP initialize → tools/list → tools/call까지 검사합니다. CI는 인증 정보 없이 실행합니다.
+CI는 라인·분기 커버리지를 측정하고 합산 80% 미만이면 실패합니다.
+
+`tests/fixtures/responses.json`은 **실계정에서 캡처한 응답이 아닌 합성 fixture**입니다.
+공개 프런트엔드에서 확인한 구조를 바탕으로 작성했고 개인정보·실제 토큰은 포함하지 않습니다.
+상류 API의 실제 성공 응답과 완전히 같다고 보장하지 않습니다.
+
+`tests/test_functional.py`는 SDK의 실제 MCP 메시지 연결·도구 스키마·JSON 결과 직렬화를
+사용하고 HTTP 경계만 `httpx.MockTransport`로 대체합니다. fixture router가 처리하지 않는
+요청은 실패하므로 이 기능 테스트에서 인터넷 API로 빠져나가지 않습니다.
+
+검증 시나리오:
+
+- 14개 도구 전체의 정상 호출과 결과 파싱
+- 파켓페어+3벳 팟+리버+손실 검색, 4벳 제외, 프리플랍·플랍·턴 올인 런아웃
+- 페이지 커서·중복 제거·반복 커서 중단·조회 예산·결과 잘림 표시
+- 기간·채널·포지션 필터, 한국 날짜 → UTC 시각, 원본 HUD 비율·사이트 용어 유지
+- 핸드 레인지 손익 집계 → 실제 액션 기록 일괄 조회의 연결
+- 잘못된 JSON·응답 루트·누락 필드·핸드 ID 불일치·잘못된 액션·미확인 그룹
+- HTTP 302/401/403/404/429/500·타임아웃·부분 실패와 오류 본문/토큰 노출 방지
+- 전체 1,326 홀카드 조합 → 169클래스 및 6/4/12 콤보 수 검증
 
 SDK: https://github.com/modelcontextprotocol/python-sdk/tree/v1.x
 

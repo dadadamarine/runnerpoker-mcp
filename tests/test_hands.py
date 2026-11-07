@@ -25,15 +25,21 @@ def detail(hand_id=1, raises=2, river=True, fold_stage=None):
             ],
         }
     ]
+    folded = False
     for stage in ["Flop", "Turn", "River"] if river else ["Flop"]:
         streets.append(
             {
                 "stage": stage,
                 "actions": [
-                    {"seq": 1, "userId": 42, "action": "Fold" if stage == fold_stage else "Check"}
+                    {
+                        "seq": 1,
+                        "userId": 7 if folded else 42,
+                        "action": "Fold" if stage == fold_stage else "Check",
+                    }
                 ],
             }
         )
+        folded = folded or stage == fold_stage
     return {
         "handId": hand_id,
         "players": [{"userId": 42}, {"userId": 7}],
@@ -98,10 +104,80 @@ def test_hero_river_is_not_just_five_board_cards():
 
 def test_prior_allin_runout_is_separate_from_river_action():
     record = detail()
-    record["streets"][-1]["actions"] = [{"seq": 1, "userId": 7, "action": "Check"}]
+    record["streets"][0]["actions"] = [
+        {"seq": 1, "userId": 42, "action": "AllIn", "totalBet": 100},
+        {"seq": 2, "userId": 7, "action": "Call", "totalBet": 100},
+    ]
+    for street in record["streets"][1:]:
+        street["actions"] = []
     result = hands.classify(record, 42)
     assert result["hero_reached_river"] is True
     assert result["hero_has_river_action"] is False
+
+
+def test_other_players_actions_cannot_prove_hero_reached_river():
+    record = detail()
+    for street in record["streets"]:
+        street["actions"] = [{"seq": 1, "userId": 7, "action": "Check"}]
+    result = hands.classify(record, 42)
+    assert result["hero_reached_river"] is None
+    assert result["hero_has_river_action"] is None
+
+
+def test_hero_turn_check_does_not_prove_survival_of_missing_turn_actions():
+    record = detail()
+    record["streets"][-1]["actions"] = []
+    assert hands.classify(record, 42)["hero_reached_river"] is None
+
+
+def test_contradictory_fold_then_river_action_stays_unknown():
+    record = detail(fold_stage="Turn")
+    record["streets"][-1]["actions"] = [{"seq": 1, "userId": 42, "action": "Check"}]
+    result = hands.classify(record, 42)
+    assert result["hero_reached_river"] is None
+    assert result["reasons"]["river"] == "contradictory_actions_after_fold_or_allin"
+
+
+@pytest.mark.parametrize("allin_stage", ["Preflop", "Flop", "Turn"])
+def test_allin_runout_from_each_street(allin_stage):
+    record = detail()
+    after_allin = False
+    for street in record["streets"]:
+        if after_allin:
+            street["actions"] = []
+        if street["stage"] == allin_stage:
+            street["actions"] = [
+                {"seq": 1, "userId": 42, "action": "AllIn"},
+                {"seq": 2, "userId": 7, "action": "Call"},
+            ]
+            after_allin = True
+    result = hands.classify(record, 42)
+    assert result["hero_reached_river"] is True
+    assert result["hero_has_river_action"] is False
+    assert result["reasons"]["river"] == "explicit_hero_allin_with_river_runout"
+
+
+@pytest.mark.parametrize("invalid", [[1, 1, 2, 3, 4], [0, 1, 2, 3, 4], [1, 2]])
+def test_invalid_board_never_proves_river(invalid):
+    record = detail()
+    record["table"]["board"] = invalid
+    assert hands.classify(record, 42)["hero_reached_river"] is None
+
+
+def test_duplicate_action_sequence_is_unknown():
+    record = detail()
+    record["streets"][0]["actions"][0]["seq"] = 2
+    assert hands.classify(record, 42)["hero_reached_river"] is None
+
+
+def test_all_1326_hole_card_combinations_map_to_169_classes():
+    from collections import Counter
+    from itertools import combinations
+
+    counts = Counter(hands.hand_class(list(cards)) for cards in combinations(range(1, 53), 2))
+    assert len(counts) == 169 and None not in counts
+    for label, count in counts.items():
+        assert count == (6 if len(label) == 2 else 4 if label.endswith("s") else 12)
 
 
 def test_string_user_ids_match_account_identity_and_missing_blinds_stay_unknown():

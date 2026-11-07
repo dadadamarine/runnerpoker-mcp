@@ -143,6 +143,62 @@ def test_position_aggregation_has_correct_denominator():
     assert groups["BTN"]["sample_bb_per_100"] == -2000
 
 
+@pytest.mark.parametrize("group_by", ["position", "hand_class", "pot_type", "river_participation"])
+def test_unknown_group_cannot_report_classification_complete(group_by):
+    record = {
+        "hand_id": 1,
+        "hand_class": None,
+        "net_bb": -20,
+        "spot": {"pot_type": None, "hero_reached_river": None},
+        "summary": {"hero": {}},
+    }
+    result = stats.aggregate(
+        {
+            "hands": [record],
+            "history_exhausted": True,
+            "classification_complete": True,
+            "unclassified_count": 0,
+        },
+        group_by,
+        20,
+    )
+    assert result["coverage"]["classification_complete"] is False
+    assert result["coverage"]["group_unknown_count"] == 1
+    assert result["coverage"]["unclassified_count"] == 1
+
+
+def test_metric_completeness_is_independent_from_group_completeness():
+    record = {
+        "hand_id": 1,
+        "hand_class": "AA",
+        "net_bb": None,
+        "spot": {},
+        "summary": {"hero": {"position": "BB"}},
+    }
+    result = stats.aggregate(
+        {"hands": [record], "history_exhausted": True, "classification_complete": True},
+        "hand_class",
+        20,
+    )
+    assert result["coverage"]["classification_complete"] is True
+    assert result["coverage"]["profit_complete"] is False
+    assert result["coverage"]["analysis_complete"] is False
+
+
+@pytest.mark.parametrize("position", ["", "Unknown", "unknown", "—", "-", "미확인"])
+def test_upstream_unknown_position_labels_stay_unclassified(position):
+    record = {
+        "hand_id": 1,
+        "hand_class": "AA",
+        "net_bb": 5,
+        "summary": {"hero": {"position": position}},
+        "spot": {},
+    }
+    result = stats.aggregate({"hands": [record], "history_exhausted": True}, "position", 1)
+    assert result["groups"][0]["group"] == "unknown"
+    assert not result["coverage"]["classification_complete"]
+
+
 async def test_aggregate_never_selects_only_losing_hands(monkeypatch):
     async def search(**kwargs):
         assert "result" not in kwargs
@@ -234,7 +290,10 @@ async def test_handrange_cursor_dedup_partial_scope(monkeypatch):
     assert calls == [None, "same"]
     assert result["coverage"]["scanned_hands"] == 1
     assert result["coverage"]["stop_reason"] == "invalid_cursor"
-    assert result["coverage"]["classification_complete"] is False
+    assert result["coverage"]["history_exhausted"] is False
+    assert result["coverage"]["classification_complete"] is True
+    assert result["coverage"]["profit_complete"] is False
+    assert result["coverage"]["analysis_complete"] is False
     assert result["groups"][0]["net_bb"] is None
 
 

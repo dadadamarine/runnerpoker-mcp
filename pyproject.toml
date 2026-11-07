@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "runnerpoker-mcp"
-version = "0.3.0"
+version = "0.3.1"
 description = "Unofficial read-only MCP server for RunnerPoker Craft timelines"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.20,<2", "httpx>=0.28,<1"]
@@ -14,7 +14,7 @@ runnerpoker-mcp = "runnerpoker_mcp.server:main"
 runnerpoker-auth = "runnerpoker_mcp.auth:main"
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.9,<1"]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.9,<1", "coverage>=7.6,<8"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -26,3 +26,11 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.coverage.run]
+branch = true
+source = ["runnerpoker_mcp"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
