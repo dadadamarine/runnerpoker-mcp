@@ -13,6 +13,14 @@ RunnerPoker Craft 타임라인을 조회하는 **비공식·읽기 전용 MCP �
 | `list_hand_histories` | 세션·날짜별 핸드 목록, 커서 기반 다음 페이지 조회 |
 | `get_hand_history` | 특정 핸드의 v2 원본 기록(플레이어·보드·액션·사이징·팟) |
 | `search_review_hands` | 파켓페어·3벳 팟·리버 참여·수익/손실 조건 검색과 리뷰 기록 수집 |
+| `get_holdem_summary` | 홀덤 요약과 같은 기간·채널의 HUD (VPIP, PFR, 3Bet 등) |
+| `get_position_stats` | 기간·채널·포지션별 통계 (핸드, BB/100, EV BB/100 등 원본 지표) |
+| `get_hud_stats` | 기간별 또는 특정 세션의 HUD |
+| `list_holdem_sessions` | 기간별 세션 목록, 시작일시 최신순 |
+| `get_session_performance` | 세션 성과와 서버에서 제공하는 스택 추세 |
+| `get_hand_histories` | 1–30개 핸드의 실제 v2 기록 일괄 조회, 부분 실패 명시 |
+| `get_hand_range_stats` | 핸드 레인지 분석: AA·AKs·AKo 등 클래스별 손익·핸드 수 |
+| `summarize_review_spots` | 포지션·핸드 클래스·팟 유형·리버 참여별 리뷰 표본 집계 |
 
 `get_timeline` 인자: `period` (`all`, `today`, `thisWeek`, `thisMonth`, `custom`),
 `start_date`, `end_date`, `page` (기본 1), `page_size` (기본 10, 최대 100).
@@ -72,6 +80,49 @@ RunnerPoker Craft 타임라인을 조회하는 **비공식·읽기 전용 MCP �
 `hero_has_river_action`으로 리버 액션 유무를 별도로 확인하세요.
 금전 손실은 전략적 실수나 EV 손실의 증거가 아니며, 이 서버는 솔버를 실행하지 않습니다.
 토너먼트에 캐시 BB 수익 지표를 적용하지 않습니다.
+
+### 홀덤 요약·포지션·핸드 레인지 분석
+
+- “이번 달 홀덤 요약에서 VPIP, PFR, 3Bet 보여줘.”
+  → `get_holdem_summary(period="thisMonth")`
+- “최근 7일 BB 포지션 성적 보여줘.”
+  → `get_position_stats(period="thisWeek", selected_positions=["BB"])`
+- “11월 1일부터 7일까지 BTN과 CO 비교해줘.”
+  → `get_position_stats(period="custom", start_date="2026-11-01", end_date="2026-11-07",
+  selected_positions=["BTN", "CO"])`
+- “AA와 KK의 손익을 보고 실제 핸드 리뷰해줘.”
+  → `get_hand_range_stats(selected_hands=["AA", "KK"], start_date=..., end_date=...)`
+  → 반환된 `matching_hand_ids`로 `get_hand_histories(hand_ids=[...])`
+- “파켓페어 3벳 팟에서 어느 포지션 손익이 나쁜지 비교해줘.”
+  → `summarize_review_spots(group_by="position", pocket_pairs_only=true, pot_type="three_bet")`
+
+통계 도구는 사이트의 용어를 사용합니다. `runnerpoker://terminology` 리소스에 원본 필드와
+`VPIP`, `PFR`, `3Bet`, `플랍 C-bet`, `WTSD`, `WSD`, `손익`, `BB/100`, `EV BB/100`
+표기 대응을 제공합니다. HUD 원본 비율은 그대로 반환하며 사이트는 0–1 값을 퍼센트로
+표시합니다. 두 번 변환하지 마세요. 기회 수와 분모는 서버 값을 유지합니다.
+
+포지션 통계의 `BB/100`은 비율이며 총손익이 아닙니다. 서버가 제공하지 않는 총손익을
+반올림된 비율에서 만들어내지 않습니다. `EV BB/100`도 원본 지표로 취급하며 솔버의 EV
+판정이라고 부르지 않습니다. `channel_ids`를 생략하면 명시적 채널 필터를 보내지 않으므로,
+사이트에서 선택한 채널과 다르면 결과가 달라질 수 있습니다.
+
+`get_hand_range_stats`는 사이트의 핸드 레인지 분석처럼 **목록만** 읽어 캐시 핸드를
+169개 클래스로 묶습니다. 상세 액션을 받지 않아 기간별 클래스 손익 조회에 적합합니다.
+`max_pages` 기본 3·최대 20, 페이지당 100핸드이며, 일부만 읽으면 `coverage`에 표시합니다.
+`selected_hands`에는 `AA`, `AKs`, `AKo`처럼 표준 클래스명을 넣습니다. 선택한 클래스가
+표본에서 관측되지 않으면 `unobserved_hands`에 표시하며 손익 0으로 만들지 않습니다.
+
+`summarize_review_spots`는 승리·패배 핸드를 모두 포함해 조건에 맞는 **리뷰 표본**을
+집계합니다. `group_by`는 `position`, `hand_class`, `pot_type`, `river_participation`입니다.
+`net_bb`는 표본의 BB 단위 손익 합계, `sample_bb_per_100`은 그 표본의 BB/100입니다.
+`min_samples` 기본 20 미만 그룹도 숨기지 않고 `below_min_samples`(표본 부족)를 표시합니다.
+임계값을 넘었다고 통계적으로 충분한 표본임을 보장하지 않습니다.
+결과 누락은 분모에서 제외하고 건수를 표시합니다. 미확인 그룹도 유지합니다.
+조건부 표본의 BB/100을 전체 핸드의 승률로 설명하지 마세요.
+
+`get_session_performance`의 스택 증가는 리바이를 포함할 수 있으므로 손익 증가와 동일시하지
+않습니다. `get_hand_histories`는 성공한 기록과 `errors`를 함께 반환하며 `complete=false`면
+요청한 핸드를 전부 받았다고 말하지 않습니다.
 
 ## 설치
 
@@ -170,12 +221,9 @@ SDK: https://github.com/modelcontextprotocol/python-sdk/tree/v1.x
 
 | 기능 | API 경로 |
 |---|---|
-| 홀덤 요약·수익 곡선·다운스윙 | `/api/v1/craft/holdem/{summary,profit-curve,downswing}` |
+| 수익 곡선·다운스윙 | `/api/v1/craft/holdem/{profit-curve,downswing}` |
 | 최근 결과·세션 하이라이트 | `/api/v1/craft/holdem/{recent-results,session-highlights}` |
-| 포지션별 통계 | `/api/v1/craft/holdem/positions` |
-| 세션 목록·세션 성과 | `/api/v1/craft/holdem/sessions`, `/api/v1/craft/holdem/sessions/{id}/performance` |
 | 채널별 통계·채널 목록 | `/api/v1/craft/holdem/channels/summary`, `/api/v1/craft/holdem/channels` |
-| HUD | `/api/v1/craft/hud` |
 | 토너먼트 요약·수익·기록·단계 | `/api/v1/craft/tournament/{summary,profit-curve,downswing,recent-results,records,stages}` |
 | 토너먼트 선택·전략·참가 기록 | `/api/v1/craft/tournament/{configs,strategies,entries}` |
 | 챌린지 목록·상세·곡선 | `/api/v1/craft/challenges`, `/api/v1/craft/challenges/{id}`, `/api/v1/craft/challenges/{id}/curve` |

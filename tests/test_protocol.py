@@ -22,6 +22,14 @@ async def test_real_stdio_handshake_tools_and_calls(tmp_path):
                 "list_hand_histories",
                 "get_hand_history",
                 "search_review_hands",
+                "get_hand_histories",
+                "list_holdem_sessions",
+                "get_session_performance",
+                "get_position_stats",
+                "get_hud_stats",
+                "summarize_review_spots",
+                "get_holdem_summary",
+                "get_hand_range_stats",
             }
             assert all(tool.annotations.readOnlyHint for tool in tools.values())
             status = await session.call_tool("auth_status", {})
@@ -37,3 +45,14 @@ async def test_real_stdio_handshake_tools_and_calls(tmp_path):
             search = tools["search_review_hands"].inputSchema
             assert "pocket_pairs_only" in search["properties"]
             assert "reached_river" in search["properties"]
+            position = tools["get_position_stats"].inputSchema
+            assert "period" in position["properties"]
+            assert "selected_positions" in position["properties"]
+            invalid_batch = await session.call_tool("get_hand_histories", {"hand_ids": []})
+            assert invalid_batch.isError
+            resources = await session.list_resources()
+            assert any(str(r.uri) == "runnerpoker://terminology" for r in resources.resources)
+            terms = await session.read_resource("runnerpoker://terminology")
+            assert "VPIP" in terms.contents[0].text
+            summary = tools["get_holdem_summary"].inputSchema
+            assert "channel_ids" in summary["properties"]

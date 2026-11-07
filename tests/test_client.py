@@ -128,6 +128,17 @@ async def test_invalid_json(credentials, mock_http):
         await client.timeline()
 
 
+async def test_array_query_uses_repeated_unbracketed_keys(credentials, mock_http):
+    def handler(request):
+        assert request.url.params.get_list("ChannelIds") == ["3", "4"]
+        assert request.url.params.get_list("ParticipantIds") == ["12", "13"]
+        assert "ChannelIds[]" not in request.url.params
+        return httpx.Response(200, json={"items": []})
+
+    mock_http(handler)
+    await client.get_json("/api/v1/craft/hud", {"ChannelIds": [3, 4], "ParticipantIds": [12, 13]})
+
+
 async def test_network_error_is_sanitized(credentials, mock_http):
     def handler(request):
         raise httpx.ConnectError("private secret", request=request)
