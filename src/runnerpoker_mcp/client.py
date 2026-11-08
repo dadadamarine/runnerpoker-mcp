@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from .auth import Credentials, RunnerPokerError
+from .auth import LOGIN_URL, Credentials, RunnerPokerError
 
 BASE_URL = "https://api.runnerpoker.com"
 Period = Literal["all", "today", "thisWeek", "thisMonth", "custom"]
@@ -65,7 +65,10 @@ async def get_json(path: str, params: dict[str, Any] | None = None) -> dict[str,
     except httpx.RequestError:
         raise RunnerPokerError("RunnerPoker network request failed.") from None
     if response.status_code in {401, 403}:
-        raise RunnerPokerError("Session expired or access denied. Update your session credentials.")
+        raise RunnerPokerError(
+            f"Session expired or access denied. Log in again at {LOGIN_URL} "
+            "and update your session credentials."
+        )
     if response.status_code == 429:
         raise RunnerPokerError("RunnerPoker rate limit reached. Retry later.")
     if response.status_code != 200:

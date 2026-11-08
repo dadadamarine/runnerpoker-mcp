@@ -8,6 +8,8 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+LOGIN_URL = "https://craft.runnerpoker.com/ko/holdem/summary"
+
 
 class RunnerPokerError(Exception):
     """A safe error message that may be returned to the MCP client."""
@@ -41,7 +43,8 @@ class Credentials:
             data = json.loads(credential_path().read_text())
         except (OSError, ValueError):
             raise RunnerPokerError(
-                "Credentials unavailable. Run runnerpoker-auth with your own session JSON on stdin."
+                "Credentials unavailable. Log in at "
+                f"{LOGIN_URL}, then run runnerpoker-auth with your own session JSON on stdin."
             ) from None
         return cls.parse(data)
 
