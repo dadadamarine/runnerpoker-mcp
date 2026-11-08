@@ -292,7 +292,7 @@ HUD는 VPIP·PFR 같은 플레이 성향 통계입니다. 레인지 분석은 �
 | 설치 폴더가 이미 있다고 나옴 | 기존 설치 폴더로 이동합니다. 내용을 확인하지 않고 폴더를 지우지 마세요. |
 | 앱에 도구가 안 보임 | 해당 앱용으로 설정했는지 확인합니다. Claude Code 설정과 Claude 앱 설정은 다릅니다. 앱을 완전히 재시작합니다. |
 | `configured: false` | 3단계 인증을 진행합니다. 다른 OS 사용자나 다른 컴퓨터의 인증 파일은 자동 공유되지 않습니다. |
-| `Session expired or access denied` | Craft에서 다시 로그인한 뒤 3단계로 인증 파일을 갱신합니다. 401/403은 접근 거부일 수도 있습니다. |
+| `Session expired or access denied` | 오류 메시지의 [Craft 링크](https://craft.runnerpoker.com/ko/holdem/summary)에서 다시 로그인한 뒤 3단계로 인증 파일을 갱신합니다. 401/403은 접근 거부일 수도 있습니다. |
 | `Could not save credentials` | accessToken이 전체 값인지, userSeq가 양의 정수인지 확인합니다. 쿠키를 토큰 대신 넣지 않습니다. |
 | 기록이 비어 있음 | 기간·계정·채널·세션 조건을 확인합니다. 빈 결과를 연결 실패나 손익 0으로 단정하지 않습니다. |
 | 전체 기록이 아닌 것 같음 | 페이지·상세 조회 예산과 `coverage`를 확인하고 날짜나 세션을 좁힙니다. |

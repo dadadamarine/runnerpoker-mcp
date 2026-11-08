@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 from runnerpoker_mcp import client
-from runnerpoker_mcp.auth import Credentials, RunnerPokerError
+from runnerpoker_mcp.auth import LOGIN_URL, Credentials, RunnerPokerError
 from runnerpoker_mcp.auth import main as save_auth
 
 
@@ -180,3 +180,20 @@ def test_auth_save_is_private_and_does_not_print_token(tmp_path, monkeypatch, ca
     assert Credentials.load().user_seq == 42
     captured = capsys.readouterr()
     assert not captured.out and "secret" not in captured.err
+
+
+async def test_expired_session_error_includes_login_url(monkeypatch, tmp_path):
+    auth = tmp_path / "credentials.json"
+    auth.write_text(json.dumps({"accessToken": "abc.def", "userSeq": 1}))
+    monkeypatch.setenv("RUNNERPOKER_AUTH_FILE", str(auth))
+
+    real_client = httpx.AsyncClient
+
+    def fake_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(lambda request: httpx.Response(401))
+        return real_client(*args, **kwargs)
+
+    monkeypatch.setattr(client.httpx, "AsyncClient", fake_client)
+    with pytest.raises(RunnerPokerError, match="Session expired") as excinfo:
+        await client.get_json("/api/v1/craft/timeline")
+    assert LOGIN_URL in str(excinfo.value)
