@@ -9,6 +9,7 @@ import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 
 from runnerpoker_mcp import client
+from runnerpoker_mcp.auth import RunnerPokerError
 from runnerpoker_mcp.server import mcp
 
 
@@ -82,3 +83,11 @@ class MCPFixtureSession:
 @pytest.fixture
 def mcp_session(fixture_api):
     return MCPFixtureSession()
+
+
+@pytest.fixture(autouse=True)
+def no_browser_session_refresh(monkeypatch):
+    async def refused(check):
+        raise RunnerPokerError("disabled in tests")
+
+    monkeypatch.setattr(client, "refresh_credentials", refused)

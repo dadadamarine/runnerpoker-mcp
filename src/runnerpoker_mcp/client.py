@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from .auth import LOGIN_URL, Credentials, RunnerPokerError
+from .session_refresh import refresh_credentials
 
 BASE_URL = "https://api.runnerpoker.com"
 Period = Literal["all", "today", "thisWeek", "thisMonth", "custom"]
@@ -52,8 +53,12 @@ def timeline_params(
     return params
 
 
-async def get_json(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-    credentials = Credentials.load()  # Reload on every request so rotation needs no restart.
+AUTH_REJECTED_STATUSES = {401, 403}
+
+
+async def _send(
+    path: str, params: dict[str, Any] | None, credentials: Credentials
+) -> httpx.Response:
     headers = {
         "Authorization": f"Bearer {credentials.access_token}",
         "X-User-Seq": str(credentials.user_seq),
@@ -61,10 +66,35 @@ async def get_json(path: str, params: dict[str, Any] | None = None) -> dict[str,
     }
     try:
         async with httpx.AsyncClient(timeout=30, follow_redirects=False) as client:
-            response = await client.get(BASE_URL + path, params=params, headers=headers)
+            return await client.get(BASE_URL + path, params=params, headers=headers)
     except httpx.RequestError:
         raise RunnerPokerError("RunnerPoker network request failed.") from None
-    if response.status_code in {401, 403}:
+
+
+async def _send_with_session_refresh(path: str, params: dict[str, Any] | None) -> httpx.Response:
+    """On an auth rejection, re-acquire the session from the browser once and retry."""
+    # Reload on every request so rotation needs no restart.
+    response = await _send(path, params, Credentials.load())
+    if response.status_code not in AUTH_REJECTED_STATUSES:
+        return response
+
+    async def session_is_accepted(candidate: Credentials) -> bool:
+        probe = await _send(path, params, candidate)
+        return probe.status_code not in AUTH_REJECTED_STATUSES
+
+    try:
+        refreshed = await refresh_credentials(session_is_accepted)
+    except RunnerPokerError as error:
+        raise RunnerPokerError(
+            f"Session expired or access denied, and automatic refresh failed: {error} "
+            f"Log in again at {LOGIN_URL}."
+        ) from None
+    return await _send(path, params, refreshed)
+
+
+async def get_json(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    response = await _send_with_session_refresh(path, params)
+    if response.status_code in AUTH_REJECTED_STATUSES:
         raise RunnerPokerError(
             f"Session expired or access denied. Log in again at {LOGIN_URL} "
             "and update your session credentials."

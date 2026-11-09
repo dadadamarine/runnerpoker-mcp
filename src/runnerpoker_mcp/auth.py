@@ -49,22 +49,26 @@ class Credentials:
         return cls.parse(data)
 
 
+def save_credentials(credentials: Credentials) -> None:
+    """Atomically write the credentials file with private permissions."""
+    target = credential_path()
+    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(dir=target.parent, prefix=".credentials-")
+    try:
+        with os.fdopen(fd, "w") as stream:
+            json.dump(
+                {"accessToken": credentials.access_token, "userSeq": credentials.user_seq},
+                stream,
+            )
+        os.replace(temporary, target)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
 def main() -> None:
     """Accept {accessToken, userSeq} on stdin and atomically save a private file."""
     try:
-        credentials = Credentials.parse(json.load(sys.stdin))
-        target = credential_path()
-        target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        fd, temporary = tempfile.mkstemp(dir=target.parent, prefix=".credentials-")
-        try:
-            with os.fdopen(fd, "w") as stream:
-                json.dump(
-                    {"accessToken": credentials.access_token, "userSeq": credentials.user_seq},
-                    stream,
-                )
-            os.replace(temporary, target)
-        finally:
-            Path(temporary).unlink(missing_ok=True)
+        save_credentials(Credentials.parse(json.load(sys.stdin)))
     except (ValueError, OSError, RunnerPokerError):
         print(
             "Could not save credentials: expected accessToken and positive integer userSeq.",
