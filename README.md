@@ -189,8 +189,9 @@ macOS 설정 파일은 `~/Library/Application Support/Claude/claude_desktop_conf
 
 ### 4-B. Claude Code·Codex 마켓플레이스 설치
 
-아래는 이 저장소가 제공하는 **커뮤니티 마켓플레이스**입니다. 공식 마켓 등재를 뜻하지
-않습니다. 1~3단계로 준비·인증했다면 사용하는 클라이언트의 명령만 실행하세요.
+아래 명령은 GitHub의 이 저장소에서 플러그인을 설치합니다. Claude나 OpenAI의 공식 앱
+스토어에서 설치하는 방식은 아닙니다. 앞 단계에서 프로그램 설치와 러너포커 로그인을
+마쳤다면, 사용하는 앱에 해당하는 명령만 실행하세요.
 
 Claude Code 대화 안에서:
 
