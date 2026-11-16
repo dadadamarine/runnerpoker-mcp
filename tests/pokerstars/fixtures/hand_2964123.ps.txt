@@ -1,0 +1,42 @@
+PokerStars Hand #2964123: Hold'em No Limit (1000000/2000000) - 2026/11/15 15:38:24 CET
+Table 'RunnerPoker 마스터 2005 10' 6-max Seat #5 is the button
+Seat 1: 관악피카츄 (517760000 in chips)
+Seat 2: 홀덤초이 (6042418 in chips)
+Seat 3: Hero (385734164 in chips)
+Seat 4: 우찬 (611771943 in chips)
+Seat 5: Jojal (376000000 in chips)
+Seat 6: 익플PQUM (141000000 in chips)
+익플PQUM: posts small blind 1000000
+관악피카츄: posts big blind 2000000
+*** HOLE CARDS ***
+Dealt to Hero [Th 4s]
+홀덤초이: raises 4042418 to 6042418 and is all-in
+Hero: folds
+우찬: folds
+Jojal: raises 8957582 to 15000000
+익플PQUM: calls 14000000
+관악피카츄: calls 13000000
+*** FLOP *** [8c Jh Tc]
+익플PQUM: checks
+관악피카츄: checks
+Jojal: bets 16843997
+익플PQUM: raises 109156003 to 126000000 and is all-in
+관악피카츄: folds
+Jojal: folds
+Uncalled bet (109156003) returned to 익플PQUM
+*** TURN *** [8c Jh Tc] [3d]
+*** RIVER *** [8c Jh Tc 3d] [Jc]
+*** SHOW DOWN ***
+익플PQUM: shows [Kh Td]
+홀덤초이: shows [Ks 8s]
+익플PQUM collected 24169672 from main pot
+익플PQUM collected 60560740 from side pot-1
+*** SUMMARY ***
+Total pot 84730412 | Rake 0
+Board [8c Jh Tc 3d Jc]
+Seat 1: 관악피카츄 (big blind) folded on the Flop
+Seat 2: 홀덤초이 showed [Ks 8s] and lost
+Seat 3: Hero folded before Flop (didn't bet)
+Seat 4: 우찬 folded before Flop (didn't bet)
+Seat 5: Jojal (button) folded on the Flop
+Seat 6: 익플PQUM (small blind) showed [Kh Td] and won (84730412)

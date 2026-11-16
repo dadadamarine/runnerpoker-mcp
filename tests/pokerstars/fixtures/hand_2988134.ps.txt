@@ -1,0 +1,21 @@
+PokerStars Hand #2988134: Hold'em No Limit (5000000/10000000) - 2026/11/16 03:57:35 CET
+Table 'RunnerPoker 마스터 2006 4' 6-max Seat #4 is the button
+Seat 2: 병아리 (917500000 in chips)
+Seat 3: PDL6 (615400000 in chips)
+Seat 5: 네이든 (1000000000 in chips)
+Seat 6: Hero (1000000000 in chips)
+네이든: posts small blind 5000000
+Hero: posts big blind 10000000
+*** HOLE CARDS ***
+Dealt to Hero [Ks 7c]
+병아리: folds
+PDL6: folds
+네이든: folds
+Uncalled bet (5000000) returned to Hero
+Hero collected 10000000 from pot
+*** SUMMARY ***
+Total pot 10000000 | Rake 0
+Seat 2: 병아리 folded before Flop (didn't bet)
+Seat 3: PDL6 folded before Flop (didn't bet)
+Seat 5: 네이든 (small blind) folded before Flop
+Seat 6: Hero (big blind) collected (10000000)
