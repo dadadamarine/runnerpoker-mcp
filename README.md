@@ -14,13 +14,13 @@ AI가 본인 계정의 기록과 통계를 조회합니다. 러너포커가 만�
 | 타임라인 | 기간별 플레이 타임라인과 성과, 특정 날짜의 상세 이벤트 | `get_timeline`, `get_timeline_day` |
 | 세션 | 기간별 세션 목록, 세션 성과와 스택 추세 | `list_holdem_sessions`, `get_session_performance` |
 | 핸드 히스토리 | 세션·날짜별 핸드 목록, 핸드 원본 기록(플레이어·보드·액션·사이징·팟), 1–30개 일괄 조회 | `list_hand_histories`, `get_hand_history`, `get_hand_histories` |
-| PokerStars 내보내기 | 핸드를 PokerStars 핸드 히스토리 텍스트로 변환하고 내 컴퓨터 클립보드에 복사(복사는 macOS) | `get_hand_history_pokerstars` |
+| PokerStars 내보내기 | 핸드를 PokerStars 핸드 히스토리 텍스트로 변환. macOS에서는 내 컴퓨터 클립보드에도 복사하고, 다른 운영체제에서는 텍스트만 반환 | `get_hand_history_pokerstars` |
 | 통계 | 홀덤 요약과 HUD(VPIP·PFR·3Bet 등), 포지션별 통계, 핸드 클래스별(AA·AKs·AKo) 손익 | `get_holdem_summary`, `get_hud_stats`, `get_position_stats`, `get_hand_range_stats` |
 | 핸드 리뷰 | 파켓페어·3벳 팟·리버 참여·수익/손실 조건으로 핸드 검색, 포지션·핸드 클래스·팟 유형별 표본 집계 | `search_review_hands`, `summarize_review_spots` |
 | 연결 확인 | 로컬 인증 파일의 설정 여부 확인 | `auth_status` |
 
-러너포커 계정과 기록은 조회만 합니다. 서버가 수행하는 유일한 쓰기는 PokerStars 텍스트의
-클립보드 복사입니다. 도구 인자와 판정 로직은 [도구 상세](docs/TOOLS.md)에 있습니다.
+러너포커 계정과 기록은 조회만 합니다. 서버가 수행하는 유일한 쓰기는 macOS에서 PokerStars
+텍스트를 클립보드에 복사하는 것입니다. 도구 인자와 판정 로직은 [도구 상세](docs/TOOLS.md)에 있습니다.
 
 ## 지원 앱
 
@@ -54,7 +54,8 @@ Mac의 터미널 앱에서 진행합니다. Git과
    인증 정보는 내 컴퓨터의 `~/.config/runnerpoker-mcp/credentials.json`에 저장됩니다.
    인증 토큰과 비밀번호는 채팅에 붙여넣지 마세요.
 
-3. 사용하는 앱에 연결합니다. 어느 방법이든 2단계에서 저장한 인증 파일을 그대로 사용합니다.
+3. 사용하는 앱에 연결합니다. 플러그인과 MCP 직접 추가 모두 기본 설정에서 2단계의 인증
+   파일을 읽습니다(`RUNNERPOKER_AUTH_FILE` 환경변수를 지정하면 그 경로를 읽습니다).
    Claude Code는 대화 안에서 실행합니다.
 
    ```text
