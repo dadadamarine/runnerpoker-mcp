@@ -369,7 +369,7 @@ Claude 앱의 로컬 확장 디렉터리는 Code용 저장소 마켓과 다른 �
 | `get_timeline_day` | `YYYY-MM-DD` 날짜의 상세 이벤트 조회 |
 | `list_hand_histories` | 세션·날짜별 핸드 목록, 커서 기반 다음 페이지 조회 |
 | `get_hand_history` | 특정 핸드의 v2 원본 기록(플레이어·보드·액션·사이징·팟) |
-| `get_hand_history_pokerstars` | 핸드를 PokerStars 핸드 히스토리 텍스트로 변환(본인은 `Hero`, 헤더 시각 CET, `bb_units`로 BB 단위 전환) |
+| `get_hand_history_pokerstars` | 핸드를 PokerStars 핸드 히스토리 텍스트로 변환(본인은 `Hero`, 헤더 시각 CET, `bb_units`로 BB 단위 전환)하고 그 텍스트를 내 컴퓨터 클립보드에 복사 |
 | `search_review_hands` | 파켓페어·3벳 팟·리버 참여·수익/손실 조건 검색과 리뷰 기록 수집 |
 | `get_holdem_summary` | 홀덤 요약과 같은 기간·채널의 HUD (VPIP, PFR, 3Bet 등) |
 | `get_position_stats` | 기간·채널·포지션별 통계 (핸드, BB/100, EV BB/100 등 원본 지표) |
@@ -379,6 +379,13 @@ Claude 앱의 로컬 확장 디렉터리는 Code용 저장소 마켓과 다른 �
 | `get_hand_histories` | 1–30개 핸드의 실제 v2 기록 일괄 조회, 부분 실패 명시 |
 | `get_hand_range_stats` | 핸드 레인지 분석: AA·AKs·AKo 등 클래스별 손익·핸드 수 |
 | `summarize_review_spots` | 포지션·핸드 클래스·팟 유형·리버 참여별 리뷰 표본 집계 |
+
+`get_hand_history_pokerstars` 인자: `hand_id`, `bb_units` (기본 `false`),
+`copy_to_clipboard` (기본 `true`). 응답의 `clipboard.copied`가 복사 성공 여부이고,
+`false`일 때는 `clipboard.reason`에 사유가 담깁니다. 클립보드 복사는 macOS에서 동작하며
+다른 운영체제에서는 텍스트만 반환합니다. 여러 핸드를 연달아 내보낼 때는
+`copy_to_clipboard=false`로 클립보드를 그대로 둘 수 있습니다. 이 복사가 서버가 수행하는
+유일한 쓰기이며, 러너포커 계정과 기록은 조회만 합니다.
 
 `get_timeline` 인자: `period` (`all`, `today`, `thisWeek`, `thisMonth`, `custom`),
 `start_date`, `end_date`, `page` (기본 1), `page_size` (기본 10, 최대 100).

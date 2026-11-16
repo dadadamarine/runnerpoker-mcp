@@ -8,7 +8,7 @@ import httpx
 import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from runnerpoker_mcp import client
+from runnerpoker_mcp import client, clipboard
 from runnerpoker_mcp.server import mcp
 
 
@@ -80,5 +80,17 @@ class MCPFixtureSession:
 
 
 @pytest.fixture
-def mcp_session(fixture_api):
+def copied_texts(monkeypatch):
+    texts = []
+
+    def record_instead_of_copying(text):
+        texts.append(text)
+        return {"copied": True}
+
+    monkeypatch.setattr(clipboard, "copy_text", record_instead_of_copying)
+    return texts
+
+
+@pytest.fixture
+def mcp_session(fixture_api, copied_texts):
     return MCPFixtureSession()

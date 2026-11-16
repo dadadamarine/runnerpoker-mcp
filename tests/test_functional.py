@@ -310,7 +310,33 @@ async def test_pokerstars_tool_converts_a_complete_hand_record(mcp_session, fixt
     assert "(0.5/1)" in in_bb["text"]
 
 
-async def test_pokerstars_tool_reports_incomplete_records_as_errors(mcp_session):
+async def test_pokerstars_tool_copies_the_converted_text_to_the_clipboard(
+    mcp_session, fixture_api, copied_texts
+):
+    path = Path(__file__).parent / "pokerstars" / "fixtures" / "hand_2986858.json"
+    fixture_api.overrides["/hand-histories/v2/2986858"] = json.loads(path.read_text("utf-8"))
+    result = await call(mcp_session, "get_hand_history_pokerstars", {"hand_id": 2986858})
+    assert result["clipboard"] == {"copied": True}
+    assert copied_texts == [result["text"]]
+
+
+async def test_pokerstars_tool_leaves_the_clipboard_alone_when_copy_is_disabled(
+    mcp_session, fixture_api, copied_texts
+):
+    path = Path(__file__).parent / "pokerstars" / "fixtures" / "hand_2986858.json"
+    fixture_api.overrides["/hand-histories/v2/2986858"] = json.loads(path.read_text("utf-8"))
+    result = await call(
+        mcp_session,
+        "get_hand_history_pokerstars",
+        {"hand_id": 2986858, "copy_to_clipboard": False},
+    )
+    assert result["text"].startswith("PokerStars Hand #2986858")
+    assert result["clipboard"] == {"copied": False, "reason": "copy_to_clipboard is false"}
+    assert copied_texts == []
+
+
+async def test_pokerstars_tool_reports_incomplete_records_as_errors(mcp_session, copied_texts):
     result = await mcp_session.call_tool("get_hand_history_pokerstars", {"hand_id": 101})
     assert result.isError
     assert "incomplete or malformed" in result.content[0].text
+    assert copied_texts == []
