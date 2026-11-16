@@ -1,0 +1,41 @@
+PokerStars Hand #2987985: Hold'em No Limit (5000000/10000000) - 2026/11/16 03:53:04 CET
+Table 'RunnerPoker 마스터 2006 5' 6-max Seat #1 is the button
+Seat 1: omega (142500000 in chips)
+Seat 2: 김정진 (1000000000 in chips)
+Seat 3: Hero (850376555 in chips)
+Seat 4: 빌데 (1000000000 in chips)
+Seat 5: 이재명의홀덤스쿨 (1000000000 in chips)
+Seat 6: 물고기 (1000000000 in chips)
+김정진: posts small blind 5000000
+Hero: posts big blind 10000000
+*** HOLE CARDS ***
+Dealt to Hero [9c 6s]
+빌데: folds
+이재명의홀덤스쿨: folds
+물고기: raises 12000000 to 22000000
+omega: calls 22000000
+김정진: folds
+Hero: calls 12000000
+*** FLOP *** [3s 8d Jh]
+Hero: checks
+물고기: bets 23430000
+omega: calls 23430000
+Hero: folds
+*** TURN *** [3s 8d Jh] [4d]
+물고기: bets 60000000
+omega: raises 37070000 to 97070000 and is all-in
+물고기: calls 37070000
+*** RIVER *** [3s 8d Jh 4d] [7h]
+*** SHOW DOWN ***
+물고기: shows [Qs Qh]
+omega: shows [Th 8h]
+물고기 collected 312000000 from pot
+*** SUMMARY ***
+Total pot 312000000 | Rake 0
+Board [3s 8d Jh 4d 7h]
+Seat 1: omega (button) showed [Th 8h] and lost
+Seat 2: 김정진 (small blind) folded before Flop
+Seat 3: Hero (big blind) folded on the Flop
+Seat 4: 빌데 folded before Flop (didn't bet)
+Seat 5: 이재명의홀덤스쿨 folded before Flop (didn't bet)
+Seat 6: 물고기 showed [Qs Qh] and won (312000000)

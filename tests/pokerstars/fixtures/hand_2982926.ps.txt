@@ -1,0 +1,41 @@
+PokerStars Hand #2982926: Hold'em No Limit (5000000/10000000) - 2026/11/16 00:58:21 CET
+Table 'RunnerPoker 마스터 2006 1' 6-max Seat #6 is the button
+Seat 1: PPWR (1000000000 in chips)
+Seat 3: Hero (995000000 in chips)
+Seat 4: 런하니 (1000000000 in chips)
+Seat 5: 한게임 (352610000 in chips)
+Seat 6: yeji (1000000000 in chips)
+PPWR: posts small blind 5000000
+Hero: posts big blind 10000000
+*** HOLE CARDS ***
+Dealt to Hero [9s 6s]
+런하니: raises 10000000 to 20000000
+한게임: folds
+yeji: folds
+PPWR: folds
+Hero: calls 10000000
+*** FLOP *** [5c 9c 4s]
+Hero: checks
+런하니: bets 22500000
+Hero: raises 67500000 to 90000000
+런하니: calls 67500000
+*** TURN *** [5c 9c 4s] [Qs]
+Hero: bets 130000000
+런하니: calls 130000000
+*** RIVER *** [5c 9c 4s Qs] [4h]
+Hero: checks
+런하니: bets 760000000 and is all-in
+Hero: calls 755000000 and is all-in
+Uncalled bet (5000000) returned to 런하니
+*** SHOW DOWN ***
+런하니: shows [8s 7s]
+Hero: shows [9s 6s]
+Hero collected 1995000000 from pot
+*** SUMMARY ***
+Total pot 1995000000 | Rake 0
+Board [5c 9c 4s Qs 4h]
+Seat 1: PPWR (small blind) folded before Flop
+Seat 3: Hero (big blind) showed [9s 6s] and won (1995000000)
+Seat 4: 런하니 showed [8s 7s] and lost
+Seat 5: 한게임 folded before Flop (didn't bet)
+Seat 6: yeji (button) folded before Flop (didn't bet)

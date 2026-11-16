@@ -369,6 +369,7 @@ Claude 앱의 로컬 확장 디렉터리는 Code용 저장소 마켓과 다른 �
 | `get_timeline_day` | `YYYY-MM-DD` 날짜의 상세 이벤트 조회 |
 | `list_hand_histories` | 세션·날짜별 핸드 목록, 커서 기반 다음 페이지 조회 |
 | `get_hand_history` | 특정 핸드의 v2 원본 기록(플레이어·보드·액션·사이징·팟) |
+| `get_hand_history_pokerstars` | 핸드를 PokerStars 핸드 히스토리 텍스트로 변환(본인은 `Hero`, 헤더 시각 CET, `bb_units`로 BB 단위 전환) |
 | `search_review_hands` | 파켓페어·3벳 팟·리버 참여·수익/손실 조건 검색과 리뷰 기록 수집 |
 | `get_holdem_summary` | 홀덤 요약과 같은 기간·채널의 HUD (VPIP, PFR, 3Bet 등) |
 | `get_position_stats` | 기간·채널·포지션별 통계 (핸드, BB/100, EV BB/100 등 원본 지표) |
@@ -629,6 +630,28 @@ uv run coverage report
 HTTP 모킹으로 헤더·날짜·페이지·오류 처리를 검증하며, 실제 stdio 프로세스를 띄워
 MCP initialize → tools/list → tools/call까지 검사합니다. CI는 인증 정보 없이 실행합니다.
 CI는 라인·분기 커버리지를 측정하고 합산 80% 미만이면 실패합니다.
+
+### PokerStars 변환 서브패키지
+
+`src/runnerpoker_mcp/pokerstars/`는 표준 라이브러리만 쓰는 독립 모듈입니다. MCP 서버·HTTP
+클라이언트·인증 코드를 import하지 않으며(`tests/pokerstars/test_independence.py`가 강제),
+오류는 자체 `ConversionError`로 냅니다. 다른 프로젝트에서 쓰려면 이 디렉터리만 복사하면 됩니다.
+
+```python
+from runnerpoker_mcp.pokerstars import ConversionError, export_warnings, to_pokerstars
+
+text = to_pokerstars(record, hero_id=9396, bb_units=False)  # record = get_hand_history 응답
+warnings = export_warnings(record)  # 버튼-SB 좌석 불일치 등 변환을 막지 않는 경고
+```
+
+| 파일 | 책임 |
+|---|---|
+| `converter.py` | 레코드 → PokerStars 텍스트 (액션·팟·uncalled·요약) |
+| `cards.py` | Craft 카드 id(1~52) → `As`, `Td` 표기 |
+| `validation.py` | 중복 카드·히어로 카드 수 검증, 버튼-SB 경고 (locktree export 검증 규칙) |
+| `errors.py` | `ConversionError` |
+
+실제 핸드 레코드 픽스처와 검토를 마친 골든 출력은 `tests/pokerstars/fixtures/`에 있습니다.
 
 `tests/fixtures/responses.json`은 **실계정에서 캡처한 응답이 아닌 합성 fixture**입니다.
 공개 프런트엔드에서 확인한 구조를 바탕으로 작성했고 개인정보·실제 토큰은 포함하지 않습니다.

@@ -1,5 +1,8 @@
 """LLM-facing tools exercised over real MCP messages and mocked HTTP responses."""
 
+import json
+from pathlib import Path
+
 import httpx
 import pytest
 
@@ -293,3 +296,21 @@ async def test_duplicate_cursor_is_reported_without_infinite_fetch(mcp_session, 
     assert not result["coverage"]["history_exhausted"]
     assert not result["coverage"]["analysis_complete"]
     assert len(fixture_api.requests) == 2
+
+
+async def test_pokerstars_tool_converts_a_complete_hand_record(mcp_session, fixture_api):
+    path = Path(__file__).parent / "pokerstars" / "fixtures" / "hand_2986858.json"
+    fixture_api.overrides["/hand-histories/v2/2986858"] = json.loads(path.read_text("utf-8"))
+    result = await call(mcp_session, "get_hand_history_pokerstars", {"hand_id": 2986858})
+    assert result["format"] == "pokerstars"
+    assert result["text"].startswith("PokerStars Hand #2986858: Hold'em No Limit")
+    in_bb = await call(
+        mcp_session, "get_hand_history_pokerstars", {"hand_id": 2986858, "bb_units": True}
+    )
+    assert "(0.5/1)" in in_bb["text"]
+
+
+async def test_pokerstars_tool_reports_incomplete_records_as_errors(mcp_session):
+    result = await mcp_session.call_tool("get_hand_history_pokerstars", {"hand_id": 101})
+    assert result.isError
+    assert "incomplete or malformed" in result.content[0].text
