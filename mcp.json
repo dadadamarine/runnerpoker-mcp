@@ -6,7 +6,7 @@
       "command": "uvx",
       "args": [
         "--python", "3.11",
-        "--from", "git+https://github.com/dadadamarine/runnerpoker-mcp.git@fa40594af40f0d58ee2717117a16a329df957776",
+        "--from", "git+https://github.com/dadadamarine/runnerpoker-mcp.git@83de1c246c434d1e0c8ad1aa42a63bf890cdb2af",
         "runnerpoker-mcp"
       ]
     }
