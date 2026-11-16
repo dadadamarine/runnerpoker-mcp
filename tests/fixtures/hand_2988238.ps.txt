@@ -1,0 +1,37 @@
+PokerStars Hand #2988238: Hold'em No Limit (5000000/10000000) - 2026/11/16 03:59:24 CET
+Table 'RunnerPoker 마스터 2006 1' 6-max Seat #2 is the button
+Seat 1: PPWR (1000000000 in chips)
+Seat 2: Jett (1000000000 in chips)
+Seat 3: 빌데 (1000000000 in chips)
+Seat 5: Hero (928500000 in chips)
+Seat 6: yeji (1000000000 in chips)
+빌데: posts small blind 5000000
+Hero: posts big blind 10000000
+*** HOLE CARDS ***
+Dealt to Hero [3c 2h]
+yeji: raises 10000000 to 20000000
+PPWR: calls 20000000
+Jett: folds
+빌데: folds
+Hero: folds
+*** FLOP *** [6h 9c 2c]
+yeji: checks
+PPWR: bets 18150000
+yeji: raises 61850000 to 80000000
+PPWR: calls 61850000
+*** TURN *** [6h 9c 2c] [4c]
+yeji: bets 250000000
+PPWR: calls 250000000
+*** RIVER *** [6h 9c 2c 4c] [Qc]
+yeji: bets 650000000 and is all-in
+PPWR: folds
+Uncalled bet (650000000) returned to yeji
+yeji collected 715000000 from pot
+*** SUMMARY ***
+Total pot 715000000 | Rake 0
+Board [6h 9c 2c 4c Qc]
+Seat 1: PPWR folded on the River
+Seat 2: Jett (button) folded before Flop (didn't bet)
+Seat 3: 빌데 (small blind) folded before Flop
+Seat 5: Hero (big blind) folded before Flop
+Seat 6: yeji won (715000000)

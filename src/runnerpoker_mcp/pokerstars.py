@@ -14,7 +14,7 @@ SUITS = "sdhc"
 RANKS = "A23456789TJQK"
 STREET_BOARD_SIZES = (("Flop", 3), ("Turn", 4), ("River", 5))
 CET_OFFSET = timedelta(hours=1)
-BLIND_ACTIONS = {"SmallBlind", "BigBlind"}
+BLIND_ACTIONS = {"SmallBlind", "BigBlind", "PlayableBlind"}
 KNOWN_ACTIONS = {"Fold", "Check", "Call", "Bet", "Raise", "AllIn", "Allin", *BLIND_ACTIONS}
 SEAT_ROLES = {"BTN": " (button)", "SB": " (small blind)", "BB": " (big blind)"}
 
@@ -90,6 +90,8 @@ class Renderer:
         self.by_id = {str(p["userId"]): p for p in self.players}
         self.starting = {uid: p["finalStack"] - p["netDelta"] for uid, p in self.by_id.items()}
         self.committed = {uid: 0 for uid in self.by_id}
+        self.uncalled: tuple[str, int] | None = None
+        self.pot_trim = 0
         self.folded_on: dict[str, str] = {}
         self.lines: list[str] = []
 
@@ -106,7 +108,7 @@ class Renderer:
         name = self.names[uid]
         if kind == "SmallBlind":
             return f"{name}: posts small blind {self.amount(added)}", max(street_max, total)
-        if kind == "BigBlind":
+        if kind in ("BigBlind", "PlayableBlind"):
             return f"{name}: posts big blind {self.amount(added)}", max(street_max, total)
         if kind in ("Fold", "Check"):
             return f"{name}: {kind.lower()}s", street_max
@@ -133,13 +135,19 @@ class Renderer:
                 self.folded_on[uid] = "before Flop" if stage == "Preflop" else f"on the {stage}"
         return street_max
 
-    def uncalled_line(self) -> str | None:
-        # Craft's handBet already excludes the returned chips, so use the action totals.
+    def find_uncalled(self) -> tuple[str, int] | None:
+        """Player and chips of an unmatched bet, from the action totals."""
         ranked = sorted(self.committed.items(), key=lambda item: item[1], reverse=True)
         if len(ranked) < 2 or ranked[0][1] <= ranked[1][1]:
             return None
-        returned = self.amount(ranked[0][1] - ranked[1][1])
-        return f"Uncalled bet ({returned}) returned to {self.names[ranked[0][0]]}"
+        return ranked[0][0], ranked[0][1] - ranked[1][1]
+
+    def pot_still_holds_uncalled(self) -> bool:
+        """Craft leaves the unmatched chips in the pot when everyone folds, but removes them
+        after an all-in call; only the first case needs the pot trimmed."""
+        return self.uncalled is not None and sum(self.committed.values()) == self.table.get(
+            "totalPot"
+        )
 
     def pot_labels(self) -> list[tuple[str, dict[str, Any]]]:
         pots = self.record.get("pots") or {}
@@ -193,9 +201,12 @@ class Renderer:
             self.play(actions, stage, 0)
             if actions:
                 uncalled_slot = len(self.lines)
-        uncalled = self.uncalled_line()
-        if uncalled is not None:
-            self.lines.insert(uncalled_slot, uncalled)
+        self.uncalled = self.find_uncalled()
+        if self.uncalled is not None:
+            uid, chips = self.uncalled
+            returned = f"Uncalled bet ({self.amount(chips)}) returned to {self.names[uid]}"
+            self.lines.insert(uncalled_slot, returned)
+            self.pot_trim = chips if self.pot_still_holds_uncalled() else 0
 
     def append_showdown(self) -> tuple[bool, dict[str, int]]:
         in_hand = [
@@ -209,16 +220,22 @@ class Renderer:
                     cards = cards_text(player["holeCards"])
                     self.lines.append(f"{self.names[str(player['userId'])]}: shows [{cards}]")
         won = {uid: 0 for uid in self.by_id}
+        trim = self.pot_trim
         for label, pot in self.pot_labels():
             for winner in pot.get("winners") or []:
-                won[str(winner["userId"])] += winner["potMoney"]
-                name, money = self.names[str(winner["userId"])], self.amount(winner["potMoney"])
-                self.lines.append(f"{name} collected {money} from {label}")
+                uid = str(winner["userId"])
+                is_bettor = self.uncalled is not None and uid == self.uncalled[0]
+                collected = winner["potMoney"] - (trim if is_bettor else 0)
+                trim = 0 if is_bettor else trim
+                won[uid] += collected
+                self.lines.append(
+                    f"{self.names[uid]} collected {self.amount(collected)} from {label}"
+                )
         return is_showdown, won
 
     def append_summary(self, won: dict[str, int], is_showdown: bool) -> None:
         rake = (self.record.get("game") or {}).get("rakeMoney", 0)
-        total_pot = self.amount(self.table.get("totalPot", 0))
+        total_pot = self.amount(self.table.get("totalPot", 0) - self.pot_trim)
         self.lines += ["*** SUMMARY ***", f"Total pot {total_pot} | Rake {self.amount(rake)}"]
         if self.board:
             self.lines.append(f"Board [{cards_text(self.board)}]")
@@ -245,6 +262,9 @@ class Renderer:
         self.append_header()
         self.append_streets()
         is_showdown, won = self.append_showdown()
+        rake = (self.record.get("game") or {}).get("rakeMoney", 0)
+        if sum(won.values()) + rake != self.table.get("totalPot", 0) - self.pot_trim:
+            raise RunnerPokerError("Hand record pot does not match its actions and winners.")
         self.append_summary(won, is_showdown)
         return "\n".join(self.lines) + "\n"
 

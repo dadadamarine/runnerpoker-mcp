@@ -1,4 +1,5 @@
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 
@@ -8,7 +9,8 @@ from runnerpoker_mcp.auth import RunnerPokerError
 from runnerpoker_mcp.pokerstars import card_text, player_names, to_pokerstars
 
 HERO_ID = 9396
-HAND = json.loads((Path(__file__).parent / "fixtures" / "hand_2986858.json").read_text("utf-8"))
+FIXTURES = Path(__file__).parent / "fixtures"
+HAND = json.loads((FIXTURES / "hand_2986858.json").read_text("utf-8"))
 
 EXPECTED_CHIPS = """\
 PokerStars Hand #2986858: Hold'em No Limit (5000000/10000000) - 2026/11/16 03:19:08 CET
@@ -129,14 +131,10 @@ def test_missing_board_card_id_is_rejected():
 
 
 def test_side_pots_use_main_and_side_labels():
-    record = deepcopy(HAND)
-    record["pots"] = {
-        "main": {"amount": 600, "winners": [{"userId": 35101, "potMoney": 600}]},
-        "side": [{"amount": 210, "winners": [{"userId": 9396, "potMoney": 210}]}],
-    }
-    text = to_pokerstars(record, HERO_ID)
-    assert "네이든 collected 600 from main pot" in text
-    assert "Hero collected 210 from side pot-1" in text
+    text = to_pokerstars(json.loads((FIXTURES / "hand_2964123.json").read_text("utf-8")), HERO_ID)
+    assert "익플PQUM collected 24169672 from main pot" in text
+    assert "익플PQUM collected 60560740 from side pot-1" in text
+    assert "Total pot 84730412 | Rake 0" in text
 
 
 def test_names_disambiguate_duplicates_and_hero_lookalikes():
@@ -154,3 +152,55 @@ def test_names_disambiguate_duplicates_and_hero_lookalikes():
 )
 def test_card_ids_decode_to_rank_and_suit(card, text):
     assert card_text(card) == text
+
+
+def load_fixture(name):
+    return (FIXTURES / name).read_text("utf-8")
+
+
+# Real Craft records. Each golden text was reviewed by hand against its actions.
+GOLDEN_HANDS = {
+    "2982926": "all-in call; the short call leaves 5000000 uncalled and already out of the pot",
+    "2984660": "hero folds a 4-bet pot; turn raise and call; showdown between two others",
+    "2987773": "PlayableBlind post; fold-win keeps the uncalled turn bet inside Craft's pot",
+    "2987985": "Allin action as a raise; all-in call; run-out streets without actions",
+    "2964123": "side pot: main pot and side pot-1 both won by the same player",
+    "2987595": "preflop 5-bet shove; hero wins the run-out",
+    "2988134": "everyone folds to the big blind; blinds only",
+    "2988238": "river all-in fold; uncalled bet is already out of Craft's pot",
+    "2980455": "PlayableBlind plus an Allin flop bet and call",
+}
+
+
+@pytest.mark.parametrize("hand_id", GOLDEN_HANDS)
+def test_real_hand_matches_reviewed_pokerstars_text(hand_id):
+    record = json.loads(load_fixture(f"hand_{hand_id}.json"))
+    assert to_pokerstars(record, HERO_ID) == load_fixture(f"hand_{hand_id}.ps.txt")
+
+
+@pytest.mark.parametrize("hand_id", GOLDEN_HANDS)
+def test_real_hand_collected_chips_equal_the_total_pot(hand_id):
+    text = to_pokerstars(json.loads(load_fixture(f"hand_{hand_id}.json")), HERO_ID)
+    collected = sum(int(chips) for chips in re.findall(r" collected (\d+) from ", text))
+    assert f"Total pot {collected} | Rake 0" in text
+
+
+def test_playable_blind_is_posted_as_a_big_blind_and_checks_its_option():
+    text = to_pokerstars(json.loads(load_fixture("hand_2987773.json")), HERO_ID)
+    lines = text.splitlines()
+    assert "sy: posts big blind 10000000" in lines
+    assert lines.index("sy: posts big blind 10000000") < lines.index("*** HOLE CARDS ***")
+    assert "sy: checks" in lines[lines.index("*** HOLE CARDS ***") :]
+
+
+def test_unmatched_bet_still_inside_the_pot_is_trimmed_from_the_winner():
+    text = to_pokerstars(json.loads(load_fixture("hand_2987773.json")), HERO_ID, bb_units=True)
+    assert "Uncalled bet (19.5) returned to sy" in text
+    assert "sy collected 19.5 from pot" in text
+    assert "Total pot 19.5 | Rake 0" in text
+
+
+def test_record_whose_pot_contradicts_its_actions_is_rejected():
+    record = json.loads(load_fixture("hand_2960876.json"))
+    with pytest.raises(RunnerPokerError, match="pot does not match"):
+        to_pokerstars(record, HERO_ID)

@@ -1,0 +1,43 @@
+PokerStars Hand #2984660: Hold'em No Limit (5000000/10000000) - 2026/11/16 02:13:22 CET
+Table 'RunnerPoker 마스터 2006 7' 6-max Seat #2 is the button
+Seat 1: 대왕감자 (1000000000 in chips)
+Seat 2: Hero (973000000 in chips)
+Seat 3: yeji (1000000000 in chips)
+Seat 4: 물고기 (1000000000 in chips)
+Seat 5: PR8R (1000000000 in chips)
+Seat 6: PPWR (1000000000 in chips)
+yeji: posts small blind 5000000
+물고기: posts big blind 10000000
+*** HOLE CARDS ***
+Dealt to Hero [3h 2c]
+PR8R: folds
+PPWR: raises 10000000 to 20000000
+대왕감자: raises 26750000 to 46750000
+Hero: folds
+yeji: folds
+물고기: raises 103250000 to 150000000
+PPWR: folds
+대왕감자: calls 103250000
+*** FLOP *** [Ad 8s 8d]
+물고기: checks
+대왕감자: checks
+*** TURN *** [Ad 8s 8d] [7d]
+물고기: bets 107250000
+대왕감자: raises 107250000 to 214500000
+물고기: calls 107250000
+*** RIVER *** [Ad 8s 8d 7d] [Jd]
+물고기: checks
+대왕감자: checks
+*** SHOW DOWN ***
+물고기: shows [Qd Qh]
+대왕감자: shows [Ah Qc]
+물고기 collected 754000000 from pot
+*** SUMMARY ***
+Total pot 754000000 | Rake 0
+Board [Ad 8s 8d 7d Jd]
+Seat 1: 대왕감자 showed [Ah Qc] and lost
+Seat 2: Hero (button) folded before Flop (didn't bet)
+Seat 3: yeji (small blind) folded before Flop
+Seat 4: 물고기 (big blind) showed [Qd Qh] and won (754000000)
+Seat 5: PR8R folded before Flop (didn't bet)
+Seat 6: PPWR folded before Flop
