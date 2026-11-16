@@ -87,7 +87,10 @@ async def get_hand_history_pokerstars(hand_id: int, bb_units: bool = False) -> d
     duplicate cards, a partly known hero hand, or a pot that contradicts the actions are errors.
     """
     record = await hands.get_hand(hand_id)
-    text = pokerstars.to_pokerstars(record, Credentials.load().user_seq, bb_units)
+    try:
+        text = pokerstars.to_pokerstars(record, Credentials.load().user_seq, bb_units)
+    except pokerstars.ConversionError as error:
+        raise RunnerPokerError(str(error)) from None
     warnings = pokerstars.export_warnings(record)
     return {"handId": hand_id, "format": "pokerstars", "text": text, "warnings": warnings}
 

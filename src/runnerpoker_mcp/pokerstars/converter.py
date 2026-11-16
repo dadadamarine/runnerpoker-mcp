@@ -8,29 +8,15 @@ time is CET, cards use T for ten, and `shows` lines carry no hand description.
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from .auth import RunnerPokerError
+from .cards import cards_text, has_known_cards
+from .errors import ConversionError
+from .validation import validate_cards
 
-SUITS = "sdhc"
-RANKS = "A23456789TJQK"
 STREET_BOARD_SIZES = (("Flop", 3), ("Turn", 4), ("River", 5))
 CET_OFFSET = timedelta(hours=1)
 BLIND_ACTIONS = {"SmallBlind", "BigBlind", "PlayableBlind"}
 KNOWN_ACTIONS = {"Fold", "Check", "Call", "Bet", "Raise", "AllIn", "Allin", *BLIND_ACTIONS}
 SEAT_ROLES = {"BTN": " (button)", "SB": " (small blind)", "BB": " (big blind)"}
-
-
-def card_text(card: object) -> str:
-    if isinstance(card, bool) or not isinstance(card, int) or not 1 <= card <= 52:
-        raise RunnerPokerError("Card id must be an integer between 1 and 52.")
-    return RANKS[(card - 1) % 13] + SUITS[(card - 1) // 13]
-
-
-def cards_text(cards: list[int]) -> str:
-    return " ".join(card_text(card) for card in cards)
-
-
-def has_known_cards(cards: object) -> bool:
-    return isinstance(cards, list) and len(cards) == 2 and all(c not in (0, None) for c in cards)
 
 
 def clean_text(value: object, fallback: str) -> str:
@@ -60,18 +46,18 @@ def player_names(players: list[dict[str, Any]], hero_id: int | None) -> dict[str
 
 def header_time(start_at: object) -> str:
     if not isinstance(start_at, str):
-        raise RunnerPokerError("Hand record has no startAt.")
+        raise ConversionError("Hand record has no startAt.")
     try:
         utc = datetime.fromisoformat(start_at.replace("Z", "+00:00")).astimezone(timezone.utc)
     except ValueError:
-        raise RunnerPokerError("Hand record startAt is not an ISO timestamp.") from None
+        raise ConversionError("Hand record startAt is not an ISO timestamp.") from None
     return (utc + CET_OFFSET).strftime("%Y/%m/%d %H:%M:%S")
 
 
 def require(record: dict[str, Any], key: str, kind: type) -> Any:
     value = record.get(key)
     if not isinstance(value, kind):
-        raise RunnerPokerError(f"Hand record is missing {key}.")
+        raise ConversionError(f"Hand record is missing {key}.")
     return value
 
 
@@ -126,7 +112,7 @@ class Renderer:
     def play(self, actions: list[dict[str, Any]], stage: str, street_max: int) -> int:
         for action in actions:
             if action.get("action") not in KNOWN_ACTIONS:
-                raise RunnerPokerError(f"Unknown action {action.get('action')!r}.")
+                raise ConversionError(f"Unknown action {action.get('action')!r}.")
             uid = str(action["userId"])
             line, street_max = self.action_line(action, street_max)
             self.committed[uid] += action["betMoney"]
@@ -258,58 +244,16 @@ class Renderer:
                 result = "mucked"
             self.lines.append(f"{head} {result}")
 
-    def validate_cards(self) -> None:
-        """Same card rules as locktree's PokerStars export validation."""
-        known_cards = [card_text(card) for card in self.board]
-        for player in self.players:
-            cards = player.get("holeCards") or []
-            revealed = [card for card in cards if card not in (0, None)]
-            is_hero = self.hero_id is not None and str(player["userId"]) == str(self.hero_id)
-            if is_hero and len(revealed) not in (0, 2):
-                raise RunnerPokerError(f"Hero must have 0 or 2 hole cards, got {len(revealed)}.")
-            if len(revealed) == 2:
-                known_cards += [card_text(card) for card in revealed]
-        duplicates = sorted({card for card in known_cards if known_cards.count(card) > 1})
-        if duplicates:
-            raise RunnerPokerError(f"Duplicate cards in hand record: {' '.join(duplicates)}.")
-
     def render(self) -> str:
-        self.validate_cards()
+        validate_cards(self.board, self.players, self.hero_id)
         self.append_header()
         self.append_streets()
         is_showdown, won = self.append_showdown()
         rake = (self.record.get("game") or {}).get("rakeMoney", 0)
         if sum(won.values()) + rake != self.table.get("totalPot", 0) - self.pot_trim:
-            raise RunnerPokerError("Hand record pot does not match its actions and winners.")
+            raise ConversionError("Hand record pot does not match its actions and winners.")
         self.append_summary(won, is_showdown)
         return "\n".join(self.lines) + "\n"
-
-
-def export_warnings(record: dict[str, Any]) -> list[str]:
-    """Non-blocking findings. locktree rejects a button that is not the seat before the small
-    blind, but Craft hands with an empty button seat (dead button) are real, so only warn."""
-    try:
-        small_blind = next(
-            a
-            for street in record["streets"]
-            for a in street["actions"]
-            if a["action"] == "SmallBlind"
-        )
-        seats = sorted(p["seat"] for p in record["players"])
-        small_blind_seat = next(
-            p["seat"] for p in record["players"] if p["userId"] == small_blind["userId"]
-        )
-        index = seats.index(small_blind_seat)
-        expected = small_blind_seat if len(seats) == 2 else seats[index - 1]
-        button = record["table"]["buttonSeat"]
-    except (KeyError, TypeError, StopIteration):
-        return []
-    if expected == button:
-        return []
-    return [
-        f"button-blind-mismatch: button is seat {button + 1}, but the seat before the small "
-        f"blind is seat {expected + 1}."
-    ]
 
 
 def to_pokerstars(
@@ -319,4 +263,4 @@ def to_pokerstars(
     try:
         return Renderer(record, hero_id, bb_units).render()
     except (KeyError, TypeError, IndexError) as error:
-        raise RunnerPokerError(f"Hand record is incomplete or malformed: {error!r}.") from None
+        raise ConversionError(f"Hand record is incomplete or malformed: {error!r}.") from None

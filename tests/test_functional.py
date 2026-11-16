@@ -299,7 +299,7 @@ async def test_duplicate_cursor_is_reported_without_infinite_fetch(mcp_session, 
 
 
 async def test_pokerstars_tool_converts_a_complete_hand_record(mcp_session, fixture_api):
-    path = Path(__file__).parent / "fixtures" / "hand_2986858.json"
+    path = Path(__file__).parent / "pokerstars" / "fixtures" / "hand_2986858.json"
     fixture_api.overrides["/hand-histories/v2/2986858"] = json.loads(path.read_text("utf-8"))
     result = await call(mcp_session, "get_hand_history_pokerstars", {"hand_id": 2986858})
     assert result["format"] == "pokerstars"

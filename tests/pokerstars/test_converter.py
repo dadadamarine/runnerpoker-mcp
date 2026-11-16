@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from runnerpoker_mcp.auth import RunnerPokerError
-from runnerpoker_mcp.pokerstars import card_text, export_warnings, player_names, to_pokerstars
+from runnerpoker_mcp.pokerstars import ConversionError, export_warnings, to_pokerstars
+from runnerpoker_mcp.pokerstars.cards import card_text
+from runnerpoker_mcp.pokerstars.converter import player_names
 
 HERO_ID = 9396
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -119,14 +120,14 @@ def test_all_in_marks_short_stack_and_returns_uncalled_bet_before_the_summary():
 def test_unknown_action_is_rejected_instead_of_guessed():
     record = deepcopy(HAND)
     record["streets"][1]["actions"][0]["action"] = "Straddle"
-    with pytest.raises(RunnerPokerError, match="Unknown action"):
+    with pytest.raises(ConversionError, match="Unknown action"):
         to_pokerstars(record, HERO_ID)
 
 
 def test_missing_board_card_id_is_rejected():
     record = deepcopy(HAND)
     record["table"]["board"][0] = 53
-    with pytest.raises(RunnerPokerError, match="Card id"):
+    with pytest.raises(ConversionError, match="Card id"):
         to_pokerstars(record, HERO_ID)
 
 
@@ -203,14 +204,14 @@ def test_unmatched_bet_still_inside_the_pot_is_trimmed_from_the_winner():
 def test_duplicate_cards_are_rejected():
     record = deepcopy(HAND)
     record["table"]["board"][0] = record["players"][3]["holeCards"][0]
-    with pytest.raises(RunnerPokerError, match="Duplicate cards"):
+    with pytest.raises(ConversionError, match="Duplicate cards"):
         to_pokerstars(record, HERO_ID)
 
 
 def test_hero_with_one_known_hole_card_is_rejected():
     record = deepcopy(HAND)
     record["players"][3]["holeCards"] = [18, 0]
-    with pytest.raises(RunnerPokerError, match="0 or 2 hole cards"):
+    with pytest.raises(ConversionError, match="0 or 2 hole cards"):
         to_pokerstars(record, HERO_ID)
 
 
@@ -231,5 +232,5 @@ def test_button_that_is_not_the_seat_before_the_small_blind_only_warns():
 
 def test_record_whose_pot_contradicts_its_actions_is_rejected():
     record = json.loads(load_fixture("hand_2960876.json"))
-    with pytest.raises(RunnerPokerError, match="pot does not match"):
+    with pytest.raises(ConversionError, match="pot does not match"):
         to_pokerstars(record, HERO_ID)
