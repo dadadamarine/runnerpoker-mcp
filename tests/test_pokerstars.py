@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from runnerpoker_mcp.auth import RunnerPokerError
-from runnerpoker_mcp.pokerstars import card_text, player_names, to_pokerstars
+from runnerpoker_mcp.pokerstars import card_text, export_warnings, player_names, to_pokerstars
 
 HERO_ID = 9396
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -198,6 +198,35 @@ def test_unmatched_bet_still_inside_the_pot_is_trimmed_from_the_winner():
     assert "Uncalled bet (19.5) returned to sy" in text
     assert "sy collected 19.5 from pot" in text
     assert "Total pot 19.5 | Rake 0" in text
+
+
+def test_duplicate_cards_are_rejected():
+    record = deepcopy(HAND)
+    record["table"]["board"][0] = record["players"][3]["holeCards"][0]
+    with pytest.raises(RunnerPokerError, match="Duplicate cards"):
+        to_pokerstars(record, HERO_ID)
+
+
+def test_hero_with_one_known_hole_card_is_rejected():
+    record = deepcopy(HAND)
+    record["players"][3]["holeCards"] = [18, 0]
+    with pytest.raises(RunnerPokerError, match="0 or 2 hole cards"):
+        to_pokerstars(record, HERO_ID)
+
+
+def test_hero_without_visible_cards_is_dealt_an_empty_hand():
+    record = deepcopy(HAND)
+    record["players"][3]["holeCards"] = [0, 0]
+    assert "Dealt to Hero \n" in to_pokerstars(record, HERO_ID)
+
+
+def test_button_that_is_not_the_seat_before_the_small_blind_only_warns():
+    assert export_warnings(HAND) == []
+    dead_button = json.loads(load_fixture("hand_2988134.json"))
+    assert export_warnings(dead_button) == [
+        "button-blind-mismatch: button is seat 4, but the seat before the small blind is seat 3."
+    ]
+    assert to_pokerstars(dead_button, HERO_ID).startswith("PokerStars Hand #2988134")
 
 
 def test_record_whose_pot_contradicts_its_actions_is_rejected():

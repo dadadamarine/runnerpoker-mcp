@@ -258,7 +258,23 @@ class Renderer:
                 result = "mucked"
             self.lines.append(f"{head} {result}")
 
+    def validate_cards(self) -> None:
+        """Same card rules as locktree's PokerStars export validation."""
+        known_cards = [card_text(card) for card in self.board]
+        for player in self.players:
+            cards = player.get("holeCards") or []
+            revealed = [card for card in cards if card not in (0, None)]
+            is_hero = self.hero_id is not None and str(player["userId"]) == str(self.hero_id)
+            if is_hero and len(revealed) not in (0, 2):
+                raise RunnerPokerError(f"Hero must have 0 or 2 hole cards, got {len(revealed)}.")
+            if len(revealed) == 2:
+                known_cards += [card_text(card) for card in revealed]
+        duplicates = sorted({card for card in known_cards if known_cards.count(card) > 1})
+        if duplicates:
+            raise RunnerPokerError(f"Duplicate cards in hand record: {' '.join(duplicates)}.")
+
     def render(self) -> str:
+        self.validate_cards()
         self.append_header()
         self.append_streets()
         is_showdown, won = self.append_showdown()
@@ -267,6 +283,33 @@ class Renderer:
             raise RunnerPokerError("Hand record pot does not match its actions and winners.")
         self.append_summary(won, is_showdown)
         return "\n".join(self.lines) + "\n"
+
+
+def export_warnings(record: dict[str, Any]) -> list[str]:
+    """Non-blocking findings. locktree rejects a button that is not the seat before the small
+    blind, but Craft hands with an empty button seat (dead button) are real, so only warn."""
+    try:
+        small_blind = next(
+            a
+            for street in record["streets"]
+            for a in street["actions"]
+            if a["action"] == "SmallBlind"
+        )
+        seats = sorted(p["seat"] for p in record["players"])
+        small_blind_seat = next(
+            p["seat"] for p in record["players"] if p["userId"] == small_blind["userId"]
+        )
+        index = seats.index(small_blind_seat)
+        expected = small_blind_seat if len(seats) == 2 else seats[index - 1]
+        button = record["table"]["buttonSeat"]
+    except (KeyError, TypeError, StopIteration):
+        return []
+    if expected == button:
+        return []
+    return [
+        f"button-blind-mismatch: button is seat {button + 1}, but the seat before the small "
+        f"blind is seat {expected + 1}."
+    ]
 
 
 def to_pokerstars(

@@ -83,11 +83,13 @@ async def get_hand_history(hand_id: int) -> dict[str, Any]:
 async def get_hand_history_pokerstars(hand_id: int, bb_units: bool = False) -> dict[str, Any]:
     """Fetch a hand and convert it to PokerStars hand-history text (locktree/GTO Wizard
     compatible: you are "Hero", header time CET). Amounts are raw Craft chips; bb_units=true
-    divides them by the big blind (blinds 0.5/1). Returns {handId, format, text}.
+    divides them by the big blind (blinds 0.5/1). Returns {handId, format, text, warnings};
+    duplicate cards, a partly known hero hand, or a pot that contradicts the actions are errors.
     """
     record = await hands.get_hand(hand_id)
     text = pokerstars.to_pokerstars(record, Credentials.load().user_seq, bb_units)
-    return {"handId": hand_id, "format": "pokerstars", "text": text}
+    warnings = pokerstars.export_warnings(record)
+    return {"handId": hand_id, "format": "pokerstars", "text": text, "warnings": warnings}
 
 
 @mcp.tool(annotations=READ_ONLY)
