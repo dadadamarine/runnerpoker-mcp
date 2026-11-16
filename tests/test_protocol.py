@@ -32,7 +32,12 @@ async def test_real_stdio_handshake_tools_and_calls(tmp_path):
                 "get_holdem_summary",
                 "get_hand_range_stats",
             }
+            clipboard_tool = tools.pop("get_hand_history_pokerstars")
             assert all(tool.annotations.readOnlyHint for tool in tools.values())
+            assert clipboard_tool.annotations.readOnlyHint is False
+            assert clipboard_tool.annotations.destructiveHint is False
+            copy_option = clipboard_tool.inputSchema["properties"]["copy_to_clipboard"]
+            assert copy_option["default"] is True
             status = await session.call_tool("auth_status", {})
             assert not status.isError
             assert status.structuredContent["configured"] is False

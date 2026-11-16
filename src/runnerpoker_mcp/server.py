@@ -1,11 +1,12 @@
 """RunnerPoker MCP stdio entry point."""
 
+import asyncio
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from . import client, hands, pokerstars, stats
+from . import client, clipboard, hands, pokerstars, stats
 from .auth import Credentials, RunnerPokerError
 
 mcp = FastMCP(
@@ -16,10 +17,16 @@ mcp = FastMCP(
         " Use deterministic classifications and reason codes; never guess unknown labels."
         " Review decisions using only information available at that action; discuss later board"
         " cards and showdown results separately."
+        " When the user asks to fetch or show a hand, call get_hand_history_pokerstars and show"
+        " its text verbatim in a code block; that tool also copies the text to the local"
+        " clipboard, which is this server's only write."
     ),
 )
 READ_ONLY = ToolAnnotations(
     readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=True
+)
+LOCAL_CLIPBOARD_WRITE = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=True
 )
 
 
@@ -79,12 +86,17 @@ async def get_hand_history(hand_id: int) -> dict[str, Any]:
     return await hands.get_hand(hand_id)
 
 
-@mcp.tool(annotations=READ_ONLY)
-async def get_hand_history_pokerstars(hand_id: int, bb_units: bool = False) -> dict[str, Any]:
+@mcp.tool(annotations=LOCAL_CLIPBOARD_WRITE)
+async def get_hand_history_pokerstars(
+    hand_id: int, bb_units: bool = False, copy_to_clipboard: bool = True
+) -> dict[str, Any]:
     """Fetch a hand and convert it to PokerStars hand-history text (locktree/GTO Wizard
     compatible: you are "Hero", header time CET). Amounts are raw Craft chips; bb_units=true
-    divides them by the big blind (blinds 0.5/1). Returns {handId, format, text, warnings};
-    duplicate cards, a partly known hero hand, or a pot that contradicts the actions are errors.
+    divides them by the big blind (blinds 0.5/1). Also copies the text to the local clipboard
+    (macOS only); pass copy_to_clipboard=false when exporting many hands in a row.
+    Returns {handId, format, text, warnings, clipboard}. Show text verbatim in a code block
+    and say whether clipboard.copied is true. Duplicate cards, a partly known hero hand,
+    or a pot that contradicts the actions are errors.
     """
     record = await hands.get_hand(hand_id)
     try:
@@ -92,7 +104,17 @@ async def get_hand_history_pokerstars(hand_id: int, bb_units: bool = False) -> d
     except pokerstars.ConversionError as error:
         raise RunnerPokerError(str(error)) from None
     warnings = pokerstars.export_warnings(record)
-    return {"handId": hand_id, "format": "pokerstars", "text": text, "warnings": warnings}
+    if copy_to_clipboard:
+        copy_result = await asyncio.to_thread(clipboard.copy_text, text)
+    else:
+        copy_result = {"copied": False, "reason": "copy_to_clipboard is false"}
+    return {
+        "handId": hand_id,
+        "format": "pokerstars",
+        "text": text,
+        "warnings": warnings,
+        "clipboard": copy_result,
+    }
 
 
 @mcp.tool(annotations=READ_ONLY)
