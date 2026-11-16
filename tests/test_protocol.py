@@ -21,6 +21,7 @@ async def test_real_stdio_handshake_tools_and_calls(tmp_path):
                 "get_timeline_day",
                 "list_hand_histories",
                 "get_hand_history",
+                "get_hand_history_pokerstars",
                 "search_review_hands",
                 "get_hand_histories",
                 "list_holdem_sessions",

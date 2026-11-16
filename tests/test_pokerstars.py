@@ -1,0 +1,156 @@
+import json
+from copy import deepcopy
+from pathlib import Path
+
+import pytest
+
+from runnerpoker_mcp.auth import RunnerPokerError
+from runnerpoker_mcp.pokerstars import card_text, player_names, to_pokerstars
+
+HERO_ID = 9396
+HAND = json.loads((Path(__file__).parent / "fixtures" / "hand_2986858.json").read_text("utf-8"))
+
+EXPECTED_CHIPS = """\
+PokerStars Hand #2986858: Hold'em No Limit (5000000/10000000) - 2026/11/16 03:19:08 CET
+Table 'RunnerPoker 마스터 2006 5' 6-max Seat #3 is the button
+Seat 1: 런하니 (1000000000 in chips)
+Seat 2: 김정진 (1000000000 in chips)
+Seat 3: Hero (815376555 in chips)
+Seat 4: 비질게 (1000000000 in chips)
+Seat 5: 네이든 (1000000000 in chips)
+Seat 6: 물고기 (1000000000 in chips)
+비질게: posts small blind 5000000
+네이든: posts big blind 10000000
+*** HOLE CARDS ***
+Dealt to Hero [5d 5c]
+물고기: folds
+런하니: folds
+김정진: folds
+Hero: raises 15000000 to 25000000
+비질게: folds
+네이든: calls 15000000
+*** FLOP *** [Js 5s 7h]
+네이든: checks
+Hero: checks
+*** TURN *** [Js 5s 7h] [9h]
+네이든: checks
+Hero: bets 27500000
+네이든: calls 27500000
+*** RIVER *** [Js 5s 7h 9h] [6s]
+네이든: checks
+Hero: bets 60000000
+네이든: raises 290000000 to 350000000
+Hero: calls 290000000
+*** SHOW DOWN ***
+Hero: shows [5d 5c]
+네이든: shows [As 4s]
+네이든 collected 810000000 from pot
+*** SUMMARY ***
+Total pot 810000000 | Rake 0
+Board [Js 5s 7h 9h 6s]
+Seat 1: 런하니 folded before Flop (didn't bet)
+Seat 2: 김정진 folded before Flop (didn't bet)
+Seat 3: Hero (button) showed [5d 5c] and lost
+Seat 4: 비질게 (small blind) folded before Flop
+Seat 5: 네이든 (big blind) showed [As 4s] and won (810000000)
+Seat 6: 물고기 folded before Flop (didn't bet)
+"""
+
+
+def short_stack_all_in_record():
+    """Hero (BB) shoves 20 over a flop bet; the opponent calls only part, so 10 is returned."""
+    record = deepcopy(HAND)
+    record["table"]["board"] = [11, 5, 33]
+    record["table"]["totalPot"] = 40000000
+    for player in record["players"]:
+        player.update(handBet=0, netDelta=0, finalStack=1000000000, winMoney=0)
+    hero = next(p for p in record["players"] if p["userId"] == HERO_ID)
+    villain = next(p for p in record["players"] if p["userId"] == 35101)
+    hero.update(handBet=20000000, netDelta=-20000000, finalStack=10000000)
+    villain.update(handBet=20000000, netDelta=20000000, finalStack=1020000000, winMoney=40000000)
+    record["streets"] = [
+        {"stage": "Preflop", "actions": [
+            {"userId": 35101, "action": "BigBlind", "betMoney": 10000000, "totalBet": 10000000},
+            {"userId": 9396, "action": "Call", "betMoney": 10000000, "totalBet": 10000000},
+        ]},
+        {"stage": "Flop", "actions": [
+            {"userId": 35101, "action": "Check", "betMoney": 0, "totalBet": 0},
+            {"userId": 9396, "action": "AllIn", "betMoney": 20000000, "totalBet": 20000000},
+            {"userId": 35101, "action": "Call", "betMoney": 10000000, "totalBet": 10000000},
+        ]},
+    ]  # fmt: skip
+    record["pots"] = {
+        "main": {"amount": 40000000, "winners": [{"userId": 35101, "potMoney": 40000000}]},
+        "side": [],
+    }
+    return record
+
+
+def test_matches_locktree_projection_for_real_hand():
+    assert to_pokerstars(HAND, HERO_ID) == EXPECTED_CHIPS
+
+
+def test_bb_units_divides_every_amount_by_the_big_blind():
+    text = to_pokerstars(HAND, HERO_ID, bb_units=True)
+    assert "Hold'em No Limit (0.5/1)" in text
+    assert "Seat 3: Hero (81.54 in chips)" in text
+    assert "네이든: raises 29 to 35" in text
+    assert "Total pot 81 | Rake 0" in text
+
+
+def test_hero_is_omitted_when_unknown():
+    text = to_pokerstars(HAND, None)
+    assert "Dealt to" not in text
+    assert "Seat 3: GTO대로칩니다 (815376555 in chips)" in text
+
+
+def test_all_in_marks_short_stack_and_returns_uncalled_bet_before_the_summary():
+    record = short_stack_all_in_record()
+    text = to_pokerstars(record, HERO_ID)
+    lines = text.splitlines()
+    assert "Hero: bets 20000000 and is all-in" in lines
+    returned = lines.index("Uncalled bet (10000000) returned to Hero")
+    assert lines[returned - 1] == "네이든: calls 10000000"
+    assert lines[returned + 1] == "*** SHOW DOWN ***"
+
+
+def test_unknown_action_is_rejected_instead_of_guessed():
+    record = deepcopy(HAND)
+    record["streets"][1]["actions"][0]["action"] = "Straddle"
+    with pytest.raises(RunnerPokerError, match="Unknown action"):
+        to_pokerstars(record, HERO_ID)
+
+
+def test_missing_board_card_id_is_rejected():
+    record = deepcopy(HAND)
+    record["table"]["board"][0] = 53
+    with pytest.raises(RunnerPokerError, match="Card id"):
+        to_pokerstars(record, HERO_ID)
+
+
+def test_side_pots_use_main_and_side_labels():
+    record = deepcopy(HAND)
+    record["pots"] = {
+        "main": {"amount": 600, "winners": [{"userId": 35101, "potMoney": 600}]},
+        "side": [{"amount": 210, "winners": [{"userId": 9396, "potMoney": 210}]}],
+    }
+    text = to_pokerstars(record, HERO_ID)
+    assert "네이든 collected 600 from main pot" in text
+    assert "Hero collected 210 from side pot-1" in text
+
+
+def test_names_disambiguate_duplicates_and_hero_lookalikes():
+    players = [
+        {"userId": 1, "nickname": "Hero", "seat": 0},
+        {"userId": 2, "nickname": "dup", "seat": 1},
+        {"userId": 3, "nickname": "dup", "seat": 2},
+        {"userId": 4, "nickname": "me", "seat": 3},
+    ]
+    assert player_names(players, 4) == {"1": "Hero_1", "2": "dup_2", "3": "dup_3", "4": "Hero"}
+
+
+@pytest.mark.parametrize(
+    ("card", "text"), [(1, "As"), (14, "Ad"), (27, "Ah"), (52, "Kc"), (10, "Ts")]
+)
+def test_card_ids_decode_to_rank_and_suit(card, text):
+    assert card_text(card) == text

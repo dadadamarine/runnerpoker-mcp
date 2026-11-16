@@ -5,7 +5,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from . import client, hands, stats
+from . import client, hands, pokerstars, stats
 from .auth import Credentials, RunnerPokerError
 
 mcp = FastMCP(
@@ -77,6 +77,17 @@ async def get_hand_history(hand_id: int) -> dict[str, Any]:
     street actions with sizing, and main/side-pot results. Never invent missing cards.
     """
     return await hands.get_hand(hand_id)
+
+
+@mcp.tool(annotations=READ_ONLY)
+async def get_hand_history_pokerstars(hand_id: int, bb_units: bool = False) -> dict[str, Any]:
+    """Fetch a hand and convert it to PokerStars hand-history text (locktree/GTO Wizard
+    compatible: you are "Hero", header time CET). Amounts are raw Craft chips; bb_units=true
+    divides them by the big blind (blinds 0.5/1). Returns {handId, format, text}.
+    """
+    record = await hands.get_hand(hand_id)
+    text = pokerstars.to_pokerstars(record, Credentials.load().user_seq, bb_units)
+    return {"handId": hand_id, "format": "pokerstars", "text": text}
 
 
 @mcp.tool(annotations=READ_ONLY)

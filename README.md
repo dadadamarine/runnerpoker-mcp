@@ -369,6 +369,7 @@ Claude 앱의 로컬 확장 디렉터리는 Code용 저장소 마켓과 다른 �
 | `get_timeline_day` | `YYYY-MM-DD` 날짜의 상세 이벤트 조회 |
 | `list_hand_histories` | 세션·날짜별 핸드 목록, 커서 기반 다음 페이지 조회 |
 | `get_hand_history` | 특정 핸드의 v2 원본 기록(플레이어·보드·액션·사이징·팟) |
+| `get_hand_history_pokerstars` | 핸드를 PokerStars 핸드 히스토리 텍스트로 변환(본인은 `Hero`, 헤더 시각 CET, `bb_units`로 BB 단위 전환) |
 | `search_review_hands` | 파켓페어·3벳 팟·리버 참여·수익/손실 조건 검색과 리뷰 기록 수집 |
 | `get_holdem_summary` | 홀덤 요약과 같은 기간·채널의 HUD (VPIP, PFR, 3Bet 등) |
 | `get_position_stats` | 기간·채널·포지션별 통계 (핸드, BB/100, EV BB/100 등 원본 지표) |
