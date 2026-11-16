@@ -49,11 +49,13 @@ Mac의 터미널 앱에서 진행합니다. Git과
    uv sync --frozen --python 3.11
    ```
 
-2. Chrome에서 [러너포커 Craft](https://craft.runnerpoker.com/ko/timeline)에 로그인하고
-   [계정을 연결](docs/INSTALL.md#3-러너포커-계정-연결하기)합니다.
+2. Chrome에서 [러너포커 Craft](https://craft.runnerpoker.com/ko/timeline)에 로그인하고,
+   1단계의 설치 폴더에서 [계정을 연결](docs/INSTALL.md#3-러너포커-계정-연결하기)합니다.
+   인증 정보는 내 컴퓨터의 `~/.config/runnerpoker-mcp/credentials.json`에 저장됩니다.
    인증 토큰과 비밀번호는 채팅에 붙여넣지 마세요.
 
-3. 사용하는 앱에 연결합니다. Claude Code는 대화 안에서 실행합니다.
+3. 사용하는 앱에 연결합니다. 어느 방법이든 2단계에서 저장한 인증 파일을 그대로 사용합니다.
+   Claude Code는 대화 안에서 실행합니다.
 
    ```text
    /plugin marketplace add dadadamarine/runnerpoker-mcp
@@ -67,7 +69,8 @@ Mac의 터미널 앱에서 진행합니다. Git과
    codex plugin add runnerpoker@runnerpoker-community
    ```
 
-   Claude 데스크톱 앱과 ChatGPT 데스크톱 앱은 위 **지원 앱** 표의 안내를 따릅니다.
+   플러그인 대신 설치 폴더를 MCP로 직접 추가하는 방법, Claude 데스크톱 앱과 ChatGPT
+   데스크톱 앱의 연결 방법은 위 **지원 앱** 표의 안내에 있습니다.
 
 4. 연결한 앱의 새 대화에서 확인합니다.
 
@@ -89,7 +92,7 @@ Mac의 터미널 앱에서 진행합니다. Git과
 | 핸드 내보내기 | 가장 최근 핸드를 PokerStars 형식으로 가져와줘. |
 
 BB 단위, 채널 구분, 조회 범위처럼 결과를 읽을 때 알아둘 점은
-[설치 가이드 6단계](docs/INSTALL.md#6-이렇게-물어보세요)에 있습니다.
+[결과 해석 안내](docs/INSTALL.md#6-이렇게-물어보세요)에 있습니다.
 
 ## 문서
 

@@ -104,7 +104,7 @@ uv sync --frozen --python 3.11
 **로컬 파일에 접근할 수 있는 AI 에이전트가 있다면** 다음 문장을 요청할 수 있습니다.
 
 > 본인 러너크래프트 계정을 이 컴퓨터의 RunnerPoker MCP에 연결해줘.
-> docs/DEVELOPMENT.md의 로컬 Chrome 인증 추출 절차로 해당 사이트의 accessToken과 userSeq만 읽고,
+> 설치 폴더 docs/DEVELOPMENT.md의 로컬 Chrome 인증 추출 절차로 해당 사이트의 accessToken과 userSeq만 읽고,
 > 토큰을 콘솔·채팅·로그에 출력하지 말고 로컬 인증 파일에 저장해줘.
 > 저장 후 auth_status와 실제 타임라인 조회를 모두 확인해줘.
 
